@@ -1,0 +1,572 @@
+﻿using Nemerle.Collections;
+using Nemerle.Peg;
+using Nemerle.Text;
+using Nemerle.Utility;
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace NThrift
+{
+    // http://web.archive.org/web/20101115080714/http://wiki.apache.org/thrift/ThriftIDL
+    [PegGrammar(Options = EmitDebugSources, start,
+    grammar
+    {
+        // Basic Definitions
+        
+        newLine                     = "\r\n" / '\n' / '\r' / '\u2028' / '\u2029' / '\u0085';
+        singleLineComment1          = "//" (!('\n' / '\r') [Any])* newLine?;
+        singleLineComment2          = "#" (!('\n' / '\r') [Any])* newLine?;
+        delimitedComment            = "/*" (!"*/" [Any])* "*/";
+        comment                     = singleLineComment1 / singleLineComment2 / delimitedComment;
+        space                       = ' ' / '\t' / '\u000B' / '\u000C' / newLine / comment;
+        letter                      = ['A'..'Z', 'a' .. 'z'];
+        digit                       = ['0'..'9'];
+        hexDigit                    = ['0'..'9', 'A'..'F', 'a'..'f'];
+
+        [InlineAllSubrules]
+        s : void = space*;
+        S : void = !identifierSuffix s;
+
+        listSeparator : void        = (',' / ';')s;
+        
+        // Identifier
+        
+        identifierSuffix           = letter / digit / '.' / '_';
+        identifierPrefix           = letter / '_';
+        identifierBody             = identifierPrefix identifierSuffix*;
+        identifier      : VString  = identifierBody s;
+
+        stIdentifierBody           = identifierPrefix (identifierSuffix / '-')*;
+        stIdentifier    : VString  = stIdentifierBody s;
+        
+        // Literal
+        
+        unicodeEscapeSequence     : char = "\\u" hexDigit hexDigit hexDigit hexDigit;
+        simpleEscapeSequence      : char = "\\'" / "\\\"" / "\\\\" / "\\0" / "\\a" / "\\b" / "\\f" / "\\n" / "\\r" / "\\t" / "\\v";
+        
+        notDoubleQuoteOrSlash     : char   = !( "\"" / "\\") [Any];
+        doubleQuotedLiteralPart   : char   = simpleEscapeSequence
+                                             / unicodeEscapeSequence
+                                             / notDoubleQuoteOrSlash;
+                                             
+        doubleQuotedLiteralBody   : string = "\"" doubleQuotedLiteralPart* "\"";
+        
+        notSingleQuoteOrSlash     : char   = !( "'" / "\\") [Any];
+        singleQuotedLiteralPart   : char   = simpleEscapeSequence
+                                             / unicodeEscapeSequence
+                                             / notSingleQuoteOrSlash;
+        singleQuotedLiteralBody   : string = "'" singleQuotedLiteralPart* "'";
+        
+        literal                   : VString= (doubleQuotedLiteralBody / singleQuotedLiteralBody) s;
+        
+        // Constant Values
+        
+        plusMinusSign                      = ('-' / '+') s;
+        decimalInteger            : VLong  = plusMinusSign? digit+ !(realNumberSuffix1 / realNumberSuffix2);
+        hexadecimalInteger        : VLong  = ("0x" / "0X") hexDigit+;
+        integer                   : VLong  = (hexadecimalInteger / decimalInteger) s;
+        
+        exponentPart                       = ("E" / "e") ("-" / "+")? digit+;        
+        realNumberSuffix1                  = "." digit+ exponentPart?;
+        realNumberSuffix2                  = exponentPart;
+        realNumberBody1                    = plusMinusSign? digit* realNumberSuffix1;
+        realNumberBody2                    = plusMinusSign? digit+ realNumberSuffix2;
+        realNumberBody            : double = realNumberBody1 / realNumberBody2;
+        
+        intConstant         : ConstValue   = integer s;
+        doubleConstant      : ConstValue   = realNumberBody s;
+        literalConstant     : ConstValue   = literal s;
+        identifierConstant  : ConstValue   = identifier s;
+        constList           : ConstValue   = '['s (constValue listSeparator?)* ']'s;
+        constMap            : ConstValue   = '{'s (constValue ':'s constValue listSeparator?)* '}'s;
+        
+        constValue          : ConstValue   = (intConstant 
+                                             / doubleConstant 
+                                             / literalConstant
+                                             / identifierConstant
+                                             / constList
+                                             / constMap)s;
+        
+        // Types
+        
+        identifierType       : FieldType     = identifier;
+        fieldBaseType        : FieldType     = baseType;
+        fieldContainerType   : FieldType     = containerType;                                             
+        fieldType            : FieldType     = identifierType / fieldBaseType / fieldContainerType;
+        
+        definitionBaseType      : DefinitionType = baseType;
+        definitionContainerType : DefinitionType = containerType;        
+        definitionType          : DefinitionType = definitionBaseType / definitionContainerType;
+        
+        baseType            : BaseType       = ( "bool" 
+                                               / "byte" 
+                                               / "i16" 
+                                               / "i32" 
+                                               / "i64" 
+                                               / "double" 
+                                               / "string" 
+                                               / "binary" 
+                                               / "slist")S;
+                                
+        mapType          : ContainerType   = "map"S cppType? '<'s fieldType ','s fieldType '>'s;                                             
+        setType          : ContainerType   = "set"S cppType? '<'s fieldType '>'s;
+        listType         : ContainerType   = "list"s '<'s fieldType '>'s cppType? s;                                                    
+        containerType    : ContainerType   = mapType / setType / listType;
+        
+        cppType          : string          = "cpp_type"S literal;
+        
+        // Field
+        defaultValue     : ConstValue      = '='s constValue;
+        field            : Field           = fieldId? fieldReq? fieldType identifier defaultValue? xsdFieldOptions listSeparator? s;
+        
+        fieldId          : VLong           = integer ':'s;
+        fieldReq         : FieldReq        = ("required" / "optional")S;
+        xsd_optional     : bool            = "xsd_optional"S;
+        xsd_nillable     : bool            = "xsd_nillable"S;
+        xsdFieldOptions  : XsdFieldOptions = xsd_optional? xsd_nillable? xsdAttrs?;
+        xsdAttrs         : XsdAttrs        = "xsd_attrs"s '{'s field* '}'s;
+        
+        // Functions
+        
+        oneway           : bool            = "oneway"S;
+        functionSuffix   : (VString * list[Field] * list[Field]) 
+                                           = identifier '('s field* ')'s throws? listSeparator?;
+        voidFunction     : Function        = oneway? "void"S functionSuffix;
+        valuedFunction   : Function        = fieldType functionSuffix;
+        function         : Function        = (voidFunction / valuedFunction)s;
+        throws           : list[Field]     = "throws"s '('s field* ')'s;
+        
+        // Definition
+        definition       : Definition      =  constDef / typeDef / enumDef / senumDef / structDef / exceptionDef / serviceDef;
+        
+        constDef         : Definition      = "const"S fieldType identifier '='s constValue listSeparator? s;
+        typeDef          : Definition      = "typedef"S definitionType identifier;
+        enumDef          : Definition      = "enum"S identifier '{'s (identifier ('='s intConstant)? listSeparator?)* '}'s;
+        senumDef         : Definition      = "senum"S identifier '{'s (literal listSeparator?)* '}'s;
+        xsd_all          : bool            = "xsd_all"S;
+        structDef        : Definition      = "struct"S identifier xsd_all? '{'s field* '}'s;
+        exceptionDef     : Definition      = "exception"S identifier '{'s field* '}'s;
+        extends          : VString         = "extends"S identifier;
+        serviceDef       : Definition      = "service"S identifier extends? '{'s function* '}'s;
+        
+        // Header
+        
+        header            : Header         = include / cppInclude / @namespace;
+        
+        include           : Header         =  "include"S literal;
+        cppInclude        : Header         =  "cpp_include"S literal;
+        
+        scopedNamespaceId : Namespace      = ( "*" 
+                                              / "cpp" 
+                                              / "java" 
+                                              / "py" 
+                                              / "perl" 
+                                              / "rb" 
+                                              / "cocoa" 
+                                              / "csharp" 
+                                              / "php" 
+                                              / "smalltalk.prefix")S identifier;
+        smallTalkCategory : Namespace      = "smalltalk.category"S stIdentifier;                                              
+        scopedNamespace   : Namespace      = "namespace"S ( scopedNamespaceId / smallTalkCategory);
+        php_namespace     : Namespace      = "php_namespace"S literal;
+        xsd_namespace     : Namespace      = "xsd_namespace"S literal;
+        @namespace        : Header         = scopedNamespace / php_namespace / xsd_namespace;
+        
+        // Document
+        
+        document          : Document       = header* definition*;
+        
+        start             : Document       = s document ![Any];
+    })]    
+    public class ThriftParser
+    {
+        identifier(idValue : NToken) : VString
+        {
+            VString(GetText(idValue))
+        }
+        
+        stIdentifier(idValue : NToken) : VString
+        {
+            VString(GetText(idValue))
+        }
+        
+        unicodeEscapeSequence(_u : NToken, d1 : NToken, d2 : NToken, d3 : NToken, d4 : NToken) : char
+        {
+          unchecked {
+            def x =
+                  HexDigit(d1) << 12
+              %|  HexDigit(d2) << 8
+              %|  HexDigit(d3) << 4
+              %|  HexDigit(d4);
+            ConvertUtf32(x)
+          }
+        }
+        
+        simpleEscapeSequence(seq : NToken) : char
+        {
+          match(GetText(seq)) 
+          {
+            | "\\'"   => '\''
+            | "\\\""  => '\"'
+            | "\\\\"  => '\\'
+            | "\\0"   => '\0'
+            | "\\a"   => '\a'
+            | "\\b"   => '\b'
+            | "\\f"   => '\f'
+            | "\\n"   => '\n'
+            | "\\r"   => '\r'
+            | "\\t"   => '\t'
+            | "\\v"   => '\v'
+            | s => s[0]
+          }
+        }        
+        
+        notDoubleQuoteOrSlash(c : NToken) : char
+        {
+          ParsingSource.Text[c.StartPos]
+        }
+        
+        doubleQuotedLiteralBody(_ : NToken, chars : List[char], _ : NToken) : string
+        {
+          string(chars.ToArray())
+        }
+
+        notSingleQuoteOrSlash(c : NToken) : char
+        {
+          ParsingSource.Text[c.StartPos]
+        }
+
+        singleQuotedLiteralBody(_ : NToken, chars : List[char], _ : NToken) : string
+        {
+          string(chars.ToArray())
+        }        
+        
+        literal(s : string) : VString
+        {
+            VString(s)
+        }
+        
+        decimalInteger(sign : NToken, decimalDigits : NToken) : VLong
+        {
+            def value = long.Parse(GetText(sign) + GetText(decimalDigits), System.Globalization.CultureInfo.InvariantCulture);
+            VLong(value)
+        }
+
+        hexadecimalInteger(_0x : NToken, hexDigits : NToken) : VLong
+        {
+            def value = long.Parse(GetText(hexDigits), System.Globalization.NumberStyles.HexNumber);
+            VLong(value)
+        }        
+        
+        realNumberBody(realNumber : NToken) : double
+        {
+            double.Parse(GetText(realNumber), System.Globalization.CultureInfo.InvariantCulture)
+        }        
+
+        intConstant(value : VLong) : ConstValue
+        {
+            ConstValue.IntConstant(value.Value)
+        }       
+        
+        doubleConstant(value : double) : ConstValue
+        {
+            ConstValue.DoubleConstant(value)
+        }        
+        
+        literalConstant(litValue : VString) : ConstValue
+        {
+            ConstValue.LiteralConstant(litValue.Value)
+        }        
+        
+        identifierConstant(identifier : VString) : ConstValue
+        {
+            ConstValue.IdentifierConstant(identifier.Value)
+        }
+
+        constList(_ : NToken, ls : List[ConstValue], _ : NToken) : ConstValue
+        {
+            ConstValue.ConstList(ls.AsList())
+        }
+
+        constMap(_ : NToken, ls : List[(ConstValue * NToken * ConstValue)], _ : NToken) : ConstValue
+        {
+            def kvs = ls.Map((key, _, value) => (key,value));
+            ConstValue.ConstMap(kvs);
+        }
+
+        identifierType(id : VString) : FieldType
+        {
+            FieldType.IdentifierType(id.Value)
+        }        
+        
+        baseType(bt : NToken) : BaseType
+        {
+            match (GetText(bt))
+            {
+                 | "bool"    => BaseType.Bool()
+                 | "byte"    => BaseType.Byte()
+                 | "i16"     => BaseType.I16()
+                 | "i32"     => BaseType.I32()
+                 | "i64"     => BaseType.I64()
+                 | "double"  => BaseType.Double()
+                 | "string"  => BaseType.String()
+                 | "binary"  => BaseType.Binary()
+                 | "slist"   => BaseType.SList()
+                 | _         => throw ArgumentException("bt")
+            }           
+        }
+
+        definitionBaseType(bt : BaseType) : DefinitionType
+        {
+            DefinitionType.BaseType(bt)
+        }        
+        
+        definitionContainerType(ct : ContainerType) : DefinitionType
+        {
+            DefinitionType.ContainerType(ct)
+        }        
+        
+        fieldBaseType(bt : BaseType) : FieldType
+        {
+            FieldType.BaseType(bt)
+        }
+
+        fieldContainerType(ct : ContainerType) : FieldType
+        {
+            FieldType.ContainerType(ct)
+        }
+
+        mapType(_ : NToken, cppType : option[string], _ : NToken, keyType : FieldType, _ : NToken, valueType : FieldType, _ : NToken) : ContainerType
+        {
+            ContainerType.MapType(cppType, keyType, valueType)
+        }
+
+        setType(_ : NToken, cppType : option[string], _ : NToken, elementType : FieldType, _ : NToken) : ContainerType
+        {
+            ContainerType.SetType(cppType, elementType)
+        }
+        
+        listType(_ : NToken, _ : NToken, elementType : FieldType, _ : NToken, cppType : option[string]) : ContainerType
+        {
+            ContainerType.ListType(elementType, cppType)
+        }        
+        
+        cppType(_cppType : NToken, type : VString) : string
+        {
+            type.Value
+        }
+
+        defaultValue(_ : NToken, cv : ConstValue) : ConstValue
+        {
+            cv
+        }
+        
+        field(id : option[VLong], req : option[FieldReq], type : FieldType, name : VString, defaultValue : option[ConstValue], xsdOptions : XsdFieldOptions) : Field
+        {
+            Field(id, req, type, name, defaultValue, xsdOptions)
+        }
+        
+        fieldId(id : VLong, _ : NToken) : VLong
+        {
+            id
+        }        
+        
+        fieldReq(fr : NToken) : FieldReq
+        {
+            match(GetText(fr))
+            {
+                | "required" => FieldReq.Required() 
+                | "optional" => FieldReq.Optional()
+                | _          => throw ArgumentException("fr")
+            }
+        }
+
+        xsd_optional(_ : NToken) : bool
+        {
+            true
+        }
+
+        xsd_nillable(_ : NToken) : bool
+        {
+            true
+        }
+        
+        xsdFieldOptions(optional : option[bool], nillable : option[bool], attrs : option[XsdAttrs]) : XsdFieldOptions
+        {
+            XsdFieldOptions(optional, nillable, attrs)
+        }
+        
+        xsdAttrs(_ : NToken, _ : NToken, ls : List[Field], _ : NToken) : XsdAttrs
+        {
+            XsdAttrs(ls.AsList())
+        }
+
+        oneway(_ : NToken) : bool
+        {
+            true
+        }
+        
+        functionSuffix(id : VString, _ : NToken, parameters : List[Field], _ : NToken, throws : option[list[Field]]) : (VString * list[Field] * list[Field])
+        {
+            def ps = parameters.AsList();
+            def thrws = throws.WithDefault([]);
+            (id, ps, thrws);
+        }
+        
+        voidFunction(oneway : option[bool], _ : NToken, nameParametersThrows : (VString * list[Field] * list[Field])) : Function
+        {
+            def ow = oneway.WithDefault(false);
+            def (name, parameters, throws) = nameParametersThrows;
+            Function.VoidFunction(ow, name, parameters, throws);
+        }
+        
+        valuedFunction(returnType : FieldType, nameParametersThrows : (VString * list[Field] * list[Field])) : Function        
+        {
+            def (name, parameters, throws) = nameParametersThrows;
+            Function.ValuedFunction(returnType, name, parameters, throws);
+        }
+        
+        throws(_ : NToken, _ : NToken, exs : List[Field], _ : NToken) : list[Field]
+        {
+            exs.AsList()            
+        }
+       
+        constDef(_ : NToken, type : FieldType, name : VString, _ : NToken, value : ConstValue) : Definition
+        {
+            Definition.Const(type, name, value)
+        }
+        
+        typeDef(_ : NToken, type : DefinitionType, name : VString) : Definition
+        {
+            Definition.Typedef(type, name)
+        }
+        
+        enumDef(_ : NToken, type : VString, _ : NToken, values : List[VString * option[(NToken * ConstValue)]], _ : NToken) : Definition
+        {
+            def vs = values.Map(v => 
+                match(v)
+                {
+                    | (name, Some((_, value))) => (name, Some(value))
+                    | (name, None)             => (name, None())
+                });
+            Definition.Enum(type, vs)
+        }
+        
+        senumDef(_ : NToken, name : VString, _ : NToken, values : List[VString], _ : NToken) : Definition
+        {
+            Definition.SEnum(name, values.AsList())
+        }
+        
+        xsd_all(_ : NToken) : bool
+        {
+            true
+        }
+        
+        structDef(_ : NToken, name : VString, xsdAll : option[bool], _ : NToken, fields : List[Field], _ : NToken) : Definition
+        {
+            Definition.Struct(name, xsdAll, fields.AsList())
+        }
+        
+        exceptionDef(_ : NToken, name : VString, _ : NToken, fields : List[Field], _ : NToken) : Definition
+        {
+            Definition.Exception(name, fields.AsList())
+        }
+        
+        extends(_ : NToken, s : VString) : VString
+        {
+            s
+        }
+        
+        serviceDef(_ : NToken, name : VString, extends : option[VString], _ : NToken, methods : List[Function], _ : NToken) : Definition
+        {
+            Definition.Service(name, extends, methods.AsList())
+        }
+
+        include(_ : NToken, incl : VString) : Header
+        {
+            Header.Include(incl)
+        }        
+        
+        cppInclude(_ : NToken, incl : VString) : Header
+        {
+            Header.CppInclude(incl)
+        }
+
+        scopedNamespaceId(scope : NToken, name : VString) : Namespace
+        {
+            match (GetText(scope))
+            {
+                | "*"                   => Namespace.StarNamespace(name)
+                | "cpp"                 => Namespace.CppNamespace(name)
+                | "java"                => Namespace.JavaPackage(name)                
+                | "py"                  => Namespace.PyModule(name)
+                | "perl"                => Namespace.PerlPackage(name)
+                | "rb"                  => Namespace.RubyNamespace(name)
+                | "cocoa"               => Namespace.CocoaPackage(name)
+                | "csharp"              => Namespace.CSharpNamespace(name)
+                | "php"                 => Namespace.PhpNamespace(name)
+                | "smalltalk.prefix"    => Namespace.SmalltalkPrefix(name)
+                | _                     => throw ArgumentException("scope")
+            }            
+        }        
+        
+        smallTalkCategory(_ : NToken, name : VString) : Namespace
+        {
+            Namespace.SmalltalkCategory(name)
+        }        
+        
+        scopedNamespace(_ : NToken, ns : Namespace) : Namespace
+        {
+            ns
+        }
+        
+        php_namespace(_ : NToken, name : VString) : Namespace
+        {
+            Namespace.PhpNamespace(name)
+        }
+
+        xsd_namespace(_ : NToken, name : VString) : Namespace
+        {
+            Namespace.XsdNamespace(name)
+        }
+        
+        @namespace(ns : Namespace) : Header
+        {
+            Header.Namespace(ns)
+        }
+
+        document(headers : List[Header], definitions : List[Definition]) : Document
+        {
+            Document(headers.AsList(), definitions.AsList())
+        }
+        
+        #region Helpers
+        
+        private HexDigit(t : NToken) : int
+        {
+          unchecked {
+            def c = ParsingSource.Text[t.StartPos];
+            if('0' <= c && c <= '9')
+              c :> int - '0' :> int
+            else if('a' <= c && c <= 'f')
+              c :> int - 'a' :> int + 10
+            else if('A' <= c && c <= 'F')
+              c :> int - 'A' :> int + 10
+            else
+              0
+          }
+        }
+
+        static ConvertUtf32(x : int) : char
+        {
+          unchecked {
+            def x = x :> uint;
+            x :> char
+          }
+        }        
+        
+        #endregion
+    }
+}

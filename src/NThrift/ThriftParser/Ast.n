@@ -1,0 +1,147 @@
+﻿using Nemerle;
+using Nemerle.Collections;
+using Nemerle.Peg;
+using Nemerle.Text;
+using Nemerle.Utility;
+
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using System.Text;
+
+namespace NThrift
+{
+    type VLong = VToken[long];
+    type VString = VToken[string];
+    
+    [Record]
+    public variant ConstValue : Located
+    {
+        | IntConstant { value : long }
+        | DoubleConstant { value : double }
+        | LiteralConstant { value : string }
+        | IdentifierConstant { value : string }
+        | ConstList { value: list[ConstValue] }
+        | ConstMap { value : list[ConstValue * ConstValue] }
+    }
+    
+    [Record]
+    public variant BaseType : Located
+    {
+        | Bool
+        | Byte
+        | I16
+        | I32
+        | I64
+        | Double
+        | String
+        | Binary
+        | SList
+    }
+    
+    [Record]
+    public variant FieldType : Located
+    {
+        | IdentifierType { type : string }
+        | BaseType       { type : NThrift.BaseType }
+        | ContainerType  { type : NThrift.ContainerType }
+    }
+    
+    [Record]
+    public variant ContainerType : Located
+    {
+        | MapType       { cppType : option[string]; keyType : FieldType; valueType : FieldType }
+        | SetType       { cppType : option[string]; elementType : FieldType }
+        | ListType      { elementType : FieldType; cppType : option[string]; }
+    }
+    
+    [Record]
+    public variant DefinitionType : Located
+    {
+        | BaseType       { type : NThrift.BaseType }
+        | ContainerType  { type : NThrift.ContainerType }
+    }
+    
+    public variant FieldReq : Located
+    {
+        | Required
+        | Optional
+    }
+    
+    [Record]
+    public class XsdAttrs : Located
+    {
+        attrs : list[Field];
+    }
+    
+    [Record]
+    public class XsdFieldOptions : Located
+    {
+        optional : option[bool];
+        nillable : option[bool];
+        xsdAttrs : option[XsdAttrs];
+    }
+    
+    [Record]
+    public class Field : Located
+    {
+        id : option[VLong];
+        req : option[FieldReq];
+        type : FieldType;
+        name : VString;
+        defaultValue : option[ConstValue];
+        xsdOptions : XsdFieldOptions;        
+    }
+    
+    [Record]
+    public variant Function : Located
+    {
+        | VoidFunction  { oneWay : bool; name: VString; parameters : list[Field]; throws : list[Field] }
+        | ValuedFunction { returnType: FieldType; name: VString; parameters : list[Field]; throws : list[Field] }
+    }
+
+    [Record]
+    public variant Namespace : Located
+    {
+        | StarNamespace { name : VString }
+        | CppNamespace { name : VString }
+        | JavaPackage { name : VString }
+        | PyModule { name : VString }
+        | PerlPackage { name : VString }
+        | RubyNamespace { name : VString }
+        | CocoaPackage { name : VString }
+        | CSharpNamespace { name : VString }
+        | SmalltalkCategory { name : VString }
+        | SmalltalkPrefix { name : VString }
+        | PhpNamespace { name : VString }
+        | XsdNamespace { name : VString }
+    }    
+    
+    [Record]
+    public variant Header : Located
+    {
+        | Include { include : VString }
+        | CppInclude { cppInclude : VString }
+        | Namespace { @namespace : NThrift.Namespace }
+    }
+    
+    [Record]
+    public variant Definition : Located
+    {
+        | Const { type : FieldType; name : VString; value : ConstValue }
+        | Typedef { type : DefinitionType; name : VString }        
+        | Enum { type : VString; values : list[(VString * option[ConstValue])] }
+        | SEnum { type : VString; values : list[VString] }
+        | Struct { name : VString; xsdAll : option[bool]; fields : list [Field] }
+        | Exception { name : VString; fields : list [Field] }
+        | Service { name : VString; extends : option[VString]; methods : list [Function] }
+    }
+    
+    [Record]
+    public class Document : Located
+    {
+        headers : list[Header];
+        definitions : list[Definition];
+    }
+}
