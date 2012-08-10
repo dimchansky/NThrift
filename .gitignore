@@ -1,6 +1,10 @@
-# Build Folders (you can keep bin if you'd like, to store dlls and pdbs)
-bin
-obj
+[Bb]in/
+[Oo]bj/
+[Dd]ebug*/
+[Rr]elease*/
+_ReSharper*
+packages
+*.user
+*.suo
+*.dotCover
 
-# mstest test results
-TestResults
