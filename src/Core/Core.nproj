@@ -62,8 +62,33 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.n" />
+    <Compile Include="Protocol\TField.n">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Protocol\TList.n">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Protocol\TMap.n">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Protocol\TMessage.n">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Protocol\TMessageType.n">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Protocol\TSet.n">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Protocol\TStruct.n">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Protocol\TType.n">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="Protocol" />
     <Folder Include="Properties\" />
   </ItemGroup>
   <Import Project="$(Nemerle)\Nemerle.MSBuild.targets" />

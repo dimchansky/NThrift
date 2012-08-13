@@ -1,0 +1,15 @@
+using System;
+using System.Collections.Generic;
+using System.Text;
+
+using Nemerle.Utility;
+
+namespace NThrift.Core.Protocol
+{
+    [Record]
+    public struct TStruct
+    {
+        [Accessor] name : string;
+    }
+}
+

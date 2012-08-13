@@ -1,0 +1,16 @@
+using System;
+using System.Collections.Generic;
+using System.Text;
+
+using Nemerle.Utility;
+
+namespace NThrift.Core.Protocol
+{
+    [Record]
+    public struct TSet
+    {
+        [Accessor] elementType : TType;
+        [Accessor] count : int;
+    }
+}
+

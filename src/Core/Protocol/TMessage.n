@@ -1,0 +1,17 @@
+using System;
+using System.Collections.Generic;
+using System.Text;
+
+using Nemerle.Utility;
+
+namespace NThrift.Core.Protocol
+{
+    [Record]
+    public struct TMessage
+    {
+        [Accessor] name : string;
+        [Accessor] type : TMessageType;
+        [Accessor] seqID : int;
+    }
+}
+
