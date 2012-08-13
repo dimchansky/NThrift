@@ -10,7 +10,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 
-namespace NThrift
+namespace NThrift.ThriftParser
 {
     type VLong = VToken[long];
     type VString = VToken[string];
@@ -44,8 +44,8 @@ namespace NThrift
     public variant FieldType : Located
     {
         | IdentifierType { type : string }
-        | BaseType       { type : NThrift.BaseType }
-        | ContainerType  { type : NThrift.ContainerType }
+        | BaseType       { type : NThrift.ThriftParser.BaseType }
+        | ContainerType  { type : NThrift.ThriftParser.ContainerType }
     }
     
     [Record]
@@ -59,8 +59,8 @@ namespace NThrift
     [Record]
     public variant DefinitionType : Located
     {
-        | BaseType       { type : NThrift.BaseType }
-        | ContainerType  { type : NThrift.ContainerType }
+        | BaseType       { type : NThrift.ThriftParser.BaseType }
+        | ContainerType  { type : NThrift.ThriftParser.ContainerType }
     }
     
     public variant FieldReq : Located
@@ -123,7 +123,7 @@ namespace NThrift
     {
         | Include { include : VString }
         | CppInclude { cppInclude : VString }
-        | Namespace { @namespace : NThrift.Namespace }
+        | Namespace { @namespace : NThrift.ThriftParser.Namespace }
     }
     
     [Record]

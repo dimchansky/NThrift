@@ -7,7 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace NThrift
+namespace NThrift.ThriftParser
 {
     // http://web.archive.org/web/20101115080714/http://wiki.apache.org/thrift/ThriftIDL
     [PegGrammar(Options = EmitDebugSources, start,
