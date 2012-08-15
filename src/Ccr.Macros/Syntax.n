@@ -1,0 +1,49 @@
+﻿using Nemerle;
+using Nemerle.Collections;
+using Nemerle.Compiler;
+using Nemerle.Compiler.Parsetree;
+using Nemerle.Compiler.Typedtree;
+using Nemerle.Text;
+using Nemerle.Utility;
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace NThrift.Ccr.Macros
+{
+  [Nemerle.MacroUsage(Nemerle.MacroPhase.BeforeTypedMembers,
+    Nemerle.MacroTargets.Method,
+    Inherited = true,
+    AllowMultiple = false)]
+  public macro CcrMethod(typeBuilder : TypeBuilder, method : ClassMember.Function)
+  syntax("ccr")
+  {
+      CcrMethodImpl.DoTransform(Macros.ImplicitCTX(), typeBuilder, method)
+  }
+  
+  module CcrMethodImpl
+  {
+    public DoTransform(typer : Typer, typeBuilder : TypeBuilder, method : ClassMember.Function) : void
+    {
+        assert2(false);
+        Macros.DefineCTX(typer);
+        
+        _ = typeBuilder; 
+        _ = method;
+        
+        def prs = method.header.Parameters;             
+        
+        match (prs)
+        {
+            | []    => Message.Error(method.header.Location, "Last parameter must be of type PortSet<TResult,Exception>")
+            | ps    => def lastParam = ps.Last;
+                       def lastParamType = typer.BindFixedType(lastParam.Type);
+                       Message.Hint(lastParam.Location, $"$(lastParam.Name) : $lastParamType"); 
+                       def aa = <[ ttype: Microsoft.Ccr.Core.PortSet[_,_] ]>;
+                       def z = lastParamType.TryRequire(aa);
+                       Message.Hint(lastParam.Location, $"TryRequire = $z"); 
+        }
+    }      
+  }
+}

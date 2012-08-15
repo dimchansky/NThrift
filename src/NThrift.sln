@@ -5,6 +5,8 @@ Project("{EDCC3B85-0BAD-11DB-BC1A-00112FDE8B61}") = "ThriftParser", "ThriftParse
 EndProject
 Project("{EDCC3B85-0BAD-11DB-BC1A-00112FDE8B61}") = "Core", "Core\Core.nproj", "{8D9B2A3D-AA0A-42A6-9D80-66158471D1D8}"
 EndProject
+Project("{EDCC3B85-0BAD-11DB-BC1A-00112FDE8B61}") = "Ccr.Macros", "Ccr.Macros\Ccr.Macros.nproj", "{1BAF097F-135D-4EFD-9448-0FB67EB67432}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -19,6 +21,10 @@ Global
 		{8D9B2A3D-AA0A-42A6-9D80-66158471D1D8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8D9B2A3D-AA0A-42A6-9D80-66158471D1D8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8D9B2A3D-AA0A-42A6-9D80-66158471D1D8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1BAF097F-135D-4EFD-9448-0FB67EB67432}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1BAF097F-135D-4EFD-9448-0FB67EB67432}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1BAF097F-135D-4EFD-9448-0FB67EB67432}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1BAF097F-135D-4EFD-9448-0FB67EB67432}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

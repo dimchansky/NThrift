@@ -5,18 +5,18 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{8d9b2a3d-aa0a-42a6-9d80-66158471d1d8}</ProjectGuid>
+    <ProjectGuid>{1baf097f-135d-4efd-9448-0fb67eb67432}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>NThrift.Core</RootNamespace>
-    <AssemblyName>NThrift.Core</AssemblyName>
+    <RootNamespace>NThrift.Ccr.Macros</RootNamespace>
+    <AssemblyName>NThrift.Ccr.Macros</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <NoStdLib>true</NoStdLib>
     <NemerleVersion>Net-4.0</NemerleVersion>
     <NemerleBinPathRoot Condition=" '$(NemerleBinPathRoot)' == '' ">$(ProgramFiles)\Nemerle</NemerleBinPathRoot>
     <Nemerle Condition=" '$(Nemerle)' == '' ">$(NemerleBinPathRoot)\$(NemerleVersion)</Nemerle>
-    <Name>Core</Name>
+    <Name>Ccr.Macros</Name>
     <StartupObject />
     <ApplicationIcon />
   </PropertyGroup>
@@ -35,7 +35,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <DocumentationFile>$(OutputPath)\$(AssemblyName).xml</DocumentationFile>
+    <DocumentationFile>$(OutputPath)\$(MSBuildProjectName).xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.Ccr.Core, Version=4.0.261.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35">
@@ -59,60 +59,23 @@
     <Reference Include="Nemerle">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>$(Nemerle)\Nemerle.dll</HintPath>
-      <Private>True</Private>
+    </Reference>
+    <Reference Include="Nemerle.Compiler">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>$(Nemerle)\Nemerle.Compiler.dll</HintPath>
     </Reference>
     <MacroReference Include="Nemerle.Linq">
       <HintPath>$(Nemerle)\Nemerle.Linq.dll</HintPath>
     </MacroReference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Core.n">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="Properties\AssemblyInfo.n" />
-    <Compile Include="Protocol\TField.n">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Protocol\TList.n">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Protocol\TMap.n">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Protocol\TMessage.n">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Protocol\TMessageType.n">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Protocol\TProtocol.n">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Protocol\TSet.n">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Protocol\TStruct.n">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Protocol\TType.n">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="TProcessor.n">
+    <Compile Include="Syntax.n">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Transport" />
-    <Folder Include="Server" />
-    <Folder Include="Protocol" />
     <Folder Include="Properties\" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Ccr.Macros\Ccr.Macros.nproj">
-      <Name>Ccr.Macros</Name>
-      <Project>{1baf097f-135d-4efd-9448-0fb67eb67432}</Project>
-      <Private>True</Private>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(Nemerle)\Nemerle.MSBuild.targets" />
   <!--

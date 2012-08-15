@@ -1,0 +1,104 @@
+﻿using Nemerle;
+using Nemerle.Collections;
+using Nemerle.Text;
+using Nemerle.Utility;
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+
+using Microsoft.Ccr.Core;
+
+namespace NThrift.Core.Protocol
+{
+    using NThrift.Ccr.Macros;
+    
+    [Record]
+    public abstract class TProtocol
+    {	    
+        [Accessor] protected dispatcherQueue : DispatcherQueue;
+        // TODO: [Accessor] protected transport : TTransport;
+
+        public abstract WriteMessageBegin(message : TMessage, resultPort : VoidFailurePort) :  void;
+        public abstract WriteMessageEnd(resultPort : VoidFailurePort) : void;
+        public abstract WriteStructBegin(struc : TStruct, resultPort : VoidFailurePort) : void;
+        public abstract WriteStructEnd(resultPort : VoidFailurePort) : void;
+        public abstract WriteFieldBegin(field : TField, resultPort : VoidFailurePort) : void;
+        public abstract WriteFieldEnd(resultPort : VoidFailurePort) : void;
+        public abstract WriteFieldStop(resultPort : VoidFailurePort) : void;
+        public abstract WriteMapBegin(map : TMap, resultPort : VoidFailurePort) : void;
+        public abstract WriteMapEnd(resultPort : VoidFailurePort) : void;
+        public abstract WriteListBegin(list_ : TList, resultPort : VoidFailurePort) : void;
+        public abstract WriteListEnd(resultPort : VoidFailurePort) : void;
+        public abstract WriteSetBegin(set_ : TSet, resultPort : VoidFailurePort) : void;
+        public abstract WriteSetEnd(resultPort : VoidFailurePort) : void;
+        public abstract WriteBool(b : bool, resultPort : VoidFailurePort) : void;
+        public abstract WriteByte(b : byte, resultPort : VoidFailurePort) : void;
+        public abstract WriteI16(i16 : short, resultPort : VoidFailurePort) : void;
+        public abstract WriteI32(i32 : int, resultPort : VoidFailurePort) : void;
+        public abstract WriteI64(i64 : long, resultPort : VoidFailurePort) : void;
+        public abstract WriteDouble(d : double, resultPort : VoidFailurePort) : void;
+        public virtual WriteString(s : string, resultPort : VoidFailurePort) : void
+        {
+            try
+            {
+                def b = Encoding.UTF8.GetBytes(s);
+                WriteBinary(b, resultPort);
+            }
+            catch
+            {
+                ex => resultPort.Post(ex)
+            }
+        }
+        public abstract WriteBinary(b : array[byte], resultPort : VoidFailurePort) : void;
+
+        public abstract ReadMessageBegin(resultPort : ResultFailurePort[TMessage]) : void;
+        public abstract ReadMessageEnd(resultPort : VoidFailurePort) : void;
+        public abstract ReadStructBegin(resultPort : ResultFailurePort[TStruct]) : void;
+        public abstract ReadStructEnd(resultPort : VoidFailurePort) : void;
+        public abstract ReadFieldBegin(resultPort : ResultFailurePort[TField]) : void;
+        public abstract ReadFieldEnd(resultPort : VoidFailurePort) : void;
+        public abstract ReadMapBegin(resultPort : ResultFailurePort[TMap]) : void;
+        public abstract ReadMapEnd(resultPort : VoidFailurePort) : void;
+        public abstract ReadListBegin(resultPort : ResultFailurePort[TList]) : void;
+        public abstract ReadListEnd(resultPort : VoidFailurePort) : void;
+        public abstract ReadSetBegin(resultPort : ResultFailurePort[TSet]) : void;
+        public abstract ReadSetEnd(resultPort : VoidFailurePort) : void;
+        public abstract ReadBool(resultPort : ResultFailurePort[bool]) : void;
+        public abstract ReadByte(resultPort : ResultFailurePort[byte]) : void;
+        public abstract ReadI16(resultPort : ResultFailurePort[short]) : void;
+        public abstract ReadI32(resultPort : ResultFailurePort[int]) : void;
+        public abstract ReadI64(resultPort : ResultFailurePort[long]) : void;
+        public abstract ReadDouble(resultPort : ResultFailurePort[double]) : void;
+        public virtual ReadString(resultPort : ResultFailurePort[string]) : void
+        {
+            try
+            {           
+                def binaryResultPort = ResultFailurePort();
+            
+                Arbiter.Activate(dispatcherQueue,
+                    Arbiter.Choice(binaryResultPort,
+                        r =>
+                            try
+                            {
+                                def res = Encoding.UTF8.GetString(r);
+                                resultPort.Post(res)
+                            }
+                            catch
+                            {
+                                ex => resultPort.Post(ex)
+                            },
+                        ex => resultPort.Post(ex))
+                );
+           
+                ReadBinary(binaryResultPort);
+            }
+            catch
+            {
+                ex => resultPort.Post(ex)
+            }
+        }
+        public abstract ReadBinary(resultPort : ResultFailurePort[array[byte]]) : void;        
+    }
+}
