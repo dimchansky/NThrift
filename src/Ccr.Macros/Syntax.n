@@ -26,7 +26,7 @@ namespace NThrift.Ccr.Macros
   {
     public DoTransform(typer : Typer, typeBuilder : TypeBuilder, method : ClassMember.Function) : void
     {
-        assert2(false);
+        //assert2(false);
         Macros.DefineCTX(typer);
         
         _ = typeBuilder; 
@@ -40,9 +40,13 @@ namespace NThrift.Ccr.Macros
             | ps    => def lastParam = ps.Last;
                        def lastParamType = typer.BindFixedType(lastParam.Type);
                        Message.Hint(lastParam.Location, $"$(lastParam.Name) : $lastParamType"); 
-                       def aa = <[ ttype: Microsoft.Ccr.Core.PortSet[_,_] ]>;
-                       def z = lastParamType.TryRequire(aa);
-                       Message.Hint(lastParam.Location, $"TryRequire = $z"); 
+                       def portSetType = <[ ttype: Microsoft.Ccr.Core.PortSet[_,_] ]>;
+                       
+                       when (portSetType.TryUnify(lastParamType))
+                       {
+                           portSetType.ForceUnify(lastParamType);
+                           Message.Hint(lastParam.Location, $"Try unify = $portSetType");
+                       }                       
         }
     }      
   }
