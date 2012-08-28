@@ -1,5 +1,6 @@
 ﻿using Nemerle;
 using Nemerle.Collections;
+using Nemerle.ComputationExpressions;
 using Nemerle.Compiler;
 using Nemerle.Compiler.Parsetree;
 using Nemerle.Compiler.Typedtree;
@@ -12,6 +13,24 @@ using System.Linq;
 
 namespace NThrift.Ccr.Macros
 {
+    macro @ccrcomp(expr : PExpr)
+    syntax ("ccrcomp", expr) 
+    {
+        CcrCompImpl.DoTransform(Macros.ImplicitCTX(), expr)
+    }
+
+    module CcrCompImpl
+    {
+        public DoTransform(typer : Typer, expr : PExpr) : PExpr
+        {
+            Macros.DefineCTX(typer);
+            def builder = CcrBuilder(typer);
+            //assert2(false);
+            ComputationExpander.Expand (builder, expr);
+        }
+    }    
+
+/*    
   [Nemerle.MacroUsage(Nemerle.MacroPhase.BeforeTypedMembers,
     Nemerle.MacroTargets.Method,
     Inherited = true,
@@ -21,19 +40,19 @@ namespace NThrift.Ccr.Macros
   {
       CcrMethodImpl.DoTransform(Macros.ImplicitCTX(), typeBuilder, method)
   }
-  
+
   module CcrMethodImpl
   {
     public DoTransform(typer : Typer, typeBuilder : TypeBuilder, method : ClassMember.Function) : void
     {
         //assert2(false);
         Macros.DefineCTX(typer);
-        
+
         _ = typeBuilder; 
         _ = method;
-        
+
         def prs = method.header.Parameters;             
-        
+
         match (prs)
         {
             | []    => Message.Error(method.header.Location, "Last parameter must be of type PortSet<TResult,Exception>")
@@ -41,7 +60,7 @@ namespace NThrift.Ccr.Macros
                        def lastParamType = typer.BindFixedType(lastParam.Type);
                        Message.Hint(lastParam.Location, $"$(lastParam.Name) : $lastParamType"); 
                        def portSetType = <[ ttype: Microsoft.Ccr.Core.PortSet[_,_] ]>;
-                       
+
                        when (portSetType.TryUnify(lastParamType))
                        {
                            portSetType.ForceUnify(lastParamType);
@@ -50,4 +69,5 @@ namespace NThrift.Ccr.Macros
         }
     }      
   }
+*/  
 }

@@ -1,0 +1,173 @@
+﻿using Nemerle;
+using Nemerle.Collections;
+using Nemerle.Compiler;
+using Nemerle.Compiler.Parsetree;
+using Nemerle.ComputationExpressions;
+using Nemerle.Text;
+using Nemerle.Utility;
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace NThrift.Ccr.Macros
+{  
+    [Record]
+    public class CcrBuilder : ComputationBuilder
+    {
+        typer : Typer;
+        [RecordIgnore] resultPort : Name = Macros.NewSymbol ();
+       
+        public override Return (expr : PExpr) : PExpr
+        {
+            Macros.DefineCTX(typer);
+            
+            def postResult (e : PExpr) { <[ $(resultPort : name).Post($e); ]> }
+            def typedExpr = typer.TypeExpr(expr);
+            if (typedExpr.Type.TryRequire(<[ ttype: Microsoft.Ccr.Core.EmptyValue ]>))
+            {
+                postResult(expr);
+            }
+            else
+            {
+                match (expr)
+                {
+                    | <[ () ]> => postResult(<[Microsoft.Ccr.Core.EmptyValue.SharedInstance]>);
+                    | _ => 
+                            <[ 
+                                try
+                                {
+                                    $(resultPort : name).Post($expr);
+                                }
+                                catch
+                                {
+                                    ex => $(resultPort : name).Post(ex);
+                                }
+                            ]>                
+                }
+            }
+        }
+
+        public override ReturnComp (expr : PExpr) : PExpr
+        {
+            ignore (expr);
+            <[ () ]>
+        }
+
+        public override Yield (expr : PExpr) : PExpr
+        {
+            ignore (expr);
+            <[ () ]>
+        }
+
+        public override YieldComp (expr : PExpr) : PExpr
+        {
+            ignore (expr);
+            <[ () ]>
+        }
+
+        public override Bind (expr : PExpr, name : PExpr, cont : PExpr) : PExpr
+        {
+            ignore (expr);
+            ignore (name);
+            ignore (cont);
+            <[ () ]>
+        }
+
+        public override Delay (expr : PExpr) : PExpr
+        {
+            ignore (expr);
+            <[ () ]>
+        }
+
+        public override Combine (expr1 : PExpr, expr2 : PExpr) : PExpr 
+        {
+            ignore (expr1);
+            ignore (expr2);
+            <[ () ]>
+        }
+
+        public override Run (expr : PExpr) : PExpr
+        {
+            <[
+                {
+                    def $(resultPort : name) = NThrift.Ccr.ResultFailurePort();
+                    $expr;
+                    $(resultPort : name);
+                }
+            ]>
+        }
+
+        public override Zero () : PExpr
+        {
+            <[ () ]>
+        }
+
+        public override While (pred : PExpr, body : PExpr) : PExpr
+        {
+            ignore (pred);
+            ignore (body);
+            <[ () ]>
+        }
+
+        public override ForEach (name : PExpr, coll : PExpr, body : PExpr) : PExpr
+        {
+            ignore (name);
+            ignore (coll);
+            ignore (body);
+            <[ () ]>
+        }
+
+        protected override ForEach (coll : PExpr, cont : PExpr) : PExpr
+        {
+            ignore (coll);
+            ignore (cont);
+            <[ () ]>
+        }
+
+        public override For (init : PExpr, cond : PExpr, change : PExpr, body : PExpr) : PExpr
+        {
+            ignore (init);
+            ignore (cond);
+            ignore (change);
+            ignore (body);
+            <[ () ]>
+        }
+
+        public override DoWhile (pred : PExpr, body : PExpr) : PExpr
+        {
+            ignore (pred);
+            ignore (body);
+            <[ () ]>
+        }
+
+        public override TryFinally (body : PExpr, handler : PExpr) : PExpr
+        {
+            ignore (body);
+            ignore (handler);            
+            <[ () ]>
+        }
+
+        public override TryCatch (body : PExpr, cases : list [TryCase]) : PExpr
+        {
+            ignore (body);
+            ignore (cases);                        
+            <[ () ]>
+        }
+
+        protected override TryCatch (body : PExpr, cont : PExpr) : PExpr
+        {
+            ignore (body);
+            ignore (cont);
+            <[ () ]>        
+        }
+
+        public override Using (expr : PExpr, name : PExpr, body : PExpr) : PExpr
+        {
+            ignore (expr);
+            ignore (name);
+            ignore (body);
+            <[ () ]>
+        }        
+    }    
+}

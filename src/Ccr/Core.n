@@ -2,8 +2,8 @@
 
 using Microsoft.Ccr.Core;    
 
-namespace NThrift.Core
+namespace NThrift.Ccr
 {
     public type ResultFailurePort[TResult] = PortSet[TResult, Exception];
-    public type VoidFailurePort = ResultFailurePort[EmptyValue];
+    public type VoidFailurePort = ResultFailurePort[EmptyValue];    
 }

@@ -66,9 +66,6 @@
     </MacroReference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Core.n">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="Properties\AssemblyInfo.n" />
     <Compile Include="Protocol\TField.n">
       <SubType>Code</SubType>
@@ -111,6 +108,11 @@
     <ProjectReference Include="..\Ccr.Macros\Ccr.Macros.nproj">
       <Name>Ccr.Macros</Name>
       <Project>{1baf097f-135d-4efd-9448-0fb67eb67432}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\Ccr\Ccr.nproj">
+      <Name>Ccr</Name>
+      <Project>{f9416059-e027-4676-8728-b2938d2bd7df}</Project>
       <Private>True</Private>
     </ProjectReference>
   </ItemGroup>

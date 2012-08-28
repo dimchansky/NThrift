@@ -8,10 +8,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
+using NThrift.Ccr;
+
 using Microsoft.Ccr.Core;
 
 namespace NThrift.Core.Protocol
-{
+{    
     using NThrift.Ccr.Macros;
     
     [Record]

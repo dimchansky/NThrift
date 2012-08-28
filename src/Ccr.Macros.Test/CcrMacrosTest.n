@@ -1,0 +1,43 @@
+﻿using Nemerle;
+using Nemerle.Collections;
+using Nemerle.ComputationExpressions;
+using Nemerle.Text;
+using Nemerle.Utility;
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+using NThrift.Ccr;
+using NThrift.Ccr.Macros;
+
+namespace NThrift.Ccr.Macros.Test
+{
+    public class CcrMacrosTest
+    {
+        public SimpleResultReturn() : ResultFailurePort[int]
+        {
+            ccrcomp
+            {
+                return 1;
+            }
+        }
+      
+        public ImplicitVoidResultReturn() : VoidFailurePort
+        {
+            ccrcomp
+            {
+                return (); // return Microsoft.Ccr.Core.EmptyValue.SharedInstance;
+            }
+        }
+
+        public ExplicitVoidResultReturn() : VoidFailurePort
+        {
+            ccrcomp
+            {
+                return Microsoft.Ccr.Core.EmptyValue.SharedInstance;
+            }
+        }
+        
+    }
+}
