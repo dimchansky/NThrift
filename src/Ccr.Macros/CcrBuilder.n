@@ -22,29 +22,39 @@ namespace NThrift.Ccr.Macros
         {
             Macros.DefineCTX(typer);
             
-            def postResult (e : PExpr) { <[ $(resultPort : name).Post($e); ]> }
-            def typedExpr = typer.TypeExpr(expr);
-            if (typedExpr.Type.TryRequire(<[ ttype: Microsoft.Ccr.Core.EmptyValue ]>))
+            def expressionResultIsVoidType(e : PExpr)
             {
-                postResult(expr);
+                def typedExpr = typer.TypeExpr(e);
+                if (typedExpr.Type.TryRequire(<[ ttype: Microsoft.Ccr.Core.EmptyValue ]>))
+                {
+                    true
+                }
+                else
+                {
+                    match (e)
+                    {
+                        | <[ () ]> => true
+                        | _ => false
+                    }
+                }
+            }
+            
+            if (expressionResultIsVoidType(expr))
+            {
+                <[ $(resultPort : name).Post(Microsoft.Ccr.Core.EmptyValue.SharedInstance); ]> 
             }
             else
             {
-                match (expr)
-                {
-                    | <[ () ]> => postResult(<[Microsoft.Ccr.Core.EmptyValue.SharedInstance]>);
-                    | _ => 
-                            <[ 
-                                try
-                                {
-                                    $(resultPort : name).Post($expr);
-                                }
-                                catch
-                                {
-                                    ex => $(resultPort : name).Post(ex);
-                                }
-                            ]>                
-                }
+                <[ 
+                    try
+                    {
+                        $(resultPort : name).Post($expr);
+                    }
+                    catch
+                    {
+                        ex => $(resultPort : name).Post(ex);
+                    }
+                ]>                 
             }
         }
 
