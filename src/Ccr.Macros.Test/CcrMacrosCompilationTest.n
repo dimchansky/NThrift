@@ -13,7 +13,7 @@ using NThrift.Ccr.Macros;
 
 namespace NThrift.Ccr.Macros.Test
 {
-    public class CcrMacrosTest
+    public class CcrMacrosCompilationTest
     {
         public SimpleResultReturn() : ResultFailurePort[int]
         {
