@@ -25,11 +25,8 @@ namespace NThrift.Ccr.Macros
         {
             match (expr)
             {
-                | <[ () ]>          
-                | <[ Microsoft.Ccr.Core.EmptyValue.SharedInstance ]>         
-                                    =>  <[ $(resultPort : name).Post(Microsoft.Ccr.Core.EmptyValue.SharedInstance); ]>
+                | <[ () ]>          =>  <[ $(resultPort : name).Post(Microsoft.Ccr.Core.EmptyValue.SharedInstance); ]>
                 | PExpr.Literal(_)
-                | PExpr.Member(_, _)
                 | PExpr.Ref(_)      =>  <[ $(resultPort : name).Post($expr); ]>
                 | _                 =>  <[ 
                                             try
@@ -64,17 +61,70 @@ namespace NThrift.Ccr.Macros
 
         public override Bind (expr : PExpr, name : PExpr, cont : PExpr) : PExpr
         {
+            Macros.DefineCTX(typer);
+
             ignore (expr);
             ignore (name);
-            ignore (cont);
+            ignore (cont);           
             if (dispatcherQueue != null)
-            {
-                <[                    
-                    Microsoft.Ccr.Core.Arbiter.Activate($dispatcherQueue,
-                        Microsoft.Ccr.Core.Arbiter.Choice($expr,
-                            $name => $cont,
-                            ex => $(resultPort : name).Post(ex)));
-                ]>                
+            {               
+                def tExpr = typer.TypeExpr(expr);
+
+                def makeResult(tExpr : TExpr) : PExpr
+                {
+                    def bindPortSet = Macros.NewSymbol ("bindPortSet");
+                    def resultValue = Macros.NewSymbol ("resultValue");
+                    def resultException = Macros.NewSymbol ("resultException");
+                    def tBindExpr = <[ ttype: Microsoft.Ccr.Core.PortSet[_, System.Exception] ]> ;
+                    
+                    if (tBindExpr.TryUnify(tExpr.Type))
+                    {
+                        tBindExpr.ForceUnify(tExpr.Type);
+                        def resultType = tBindExpr.args.Head;
+                        <[
+                            def $(bindPortSet : name) = $(tExpr : typed);
+
+                            mutable $(resultValue : name) : $(resultType : typed);
+                            if ($(bindPortSet : name).P0.Test(out $(resultValue : name)))
+                            {
+                                ($name => $cont)($(resultValue : name));
+                            }
+                            else
+                            {
+                                mutable $(resultException : name) : System.Exception;
+                                if($(bindPortSet : name).P1.Test(out $(resultException : name)))
+                                {
+                                    $(resultPort : name).Post($(resultException : name));
+                                }
+                                else
+                                {
+                                    Microsoft.Ccr.Core.Arbiter.Activate($dispatcherQueue,
+                                        Microsoft.Ccr.Core.Arbiter.Choice($(bindPortSet : name),
+                                            $name => $cont,
+                                            ex => $(resultPort : name).Post(ex)));
+                                }
+                            }
+                        ]>
+                    }
+                    else
+                    {
+                        Message.FatalError(expr.Location, "'$expr' must be of type Microsoft.Ccr.Core.PortSet[_,System.Exception]");
+                    }
+                    
+                }
+
+                match(tExpr.Type.Hint)
+                {
+                    | Some(_) => makeResult(tExpr)
+                    | _       => typer.DelayMacro(lastTry =>
+                                    match(tExpr.Type.Hint)
+                                    {
+                                        | Some(_) => Some(makeResult(tExpr))
+                                        | _       => when (lastTry) Message.Error(expr.Location, $"Cannot infer type of '$expr'");
+                                                     None()
+                                    }
+                                 );
+                }
             }
             else
             {

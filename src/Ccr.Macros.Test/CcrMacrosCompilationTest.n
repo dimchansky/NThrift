@@ -33,13 +33,13 @@ namespace NThrift.Ccr.Macros.Test
             }
         }
 
-        public ExplicitVoidResultReturn() : VoidFailurePort
-        {
-            ccrcomp
-            {
-                return Microsoft.Ccr.Core.EmptyValue.SharedInstance;
-            }
-        }
+        //public ExplicitVoidResultReturn() : VoidFailurePort
+        //{
+        //    ccrcomp
+        //    {
+        //        return Microsoft.Ccr.Core.EmptyValue.SharedInstance;
+        //    }
+        //}
         
         dispatcherQueue : DispatcherQueue = DispatcherQueue();
         
