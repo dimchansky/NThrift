@@ -38,10 +38,11 @@
     <DocumentationFile>$(OutputPath)\$(MSBuildProjectName).xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.Ccr.Core, Version=4.0.261.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35">
+    <Reference Include="Microsoft.Ccr.Core">
       <Name>Microsoft.Ccr.Core</Name>
       <AssemblyName>Microsoft.Ccr.Core.dll</AssemblyName>
       <HintPath>..\..\lib\Microsoft.Ccr.4\Microsoft.Ccr.Core.dll</HintPath>
+      <SpecificVersion>False</SpecificVersion>
     </Reference>
     <Reference Include="mscorlib" />
     <Reference Include="Nemerle.ComputationExpressions, Version=1.1.746.0, Culture=neutral, PublicKeyToken=e080a9c724e2bfcd">

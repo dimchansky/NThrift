@@ -38,16 +38,16 @@
     <DocumentationFile>$(OutputPath)\$(MSBuildProjectName).xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.Ccr.Core, Version=4.0.261.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35">
+    <Reference Include="Microsoft.Ccr.Core">
       <Name>Microsoft.Ccr.Core</Name>
       <AssemblyName>Microsoft.Ccr.Core.dll</AssemblyName>
       <HintPath>..\..\lib\Microsoft.Ccr.4\Microsoft.Ccr.Core.dll</HintPath>
+      <SpecificVersion>False</SpecificVersion>
     </Reference>
     <Reference Include="mscorlib" />
-    <Reference Include="Nemerle.ComputationExpressions, Version=1.1.746.0, Culture=neutral, PublicKeyToken=e080a9c724e2bfcd">
-      <Name>Nemerle.ComputationExpressions</Name>
-      <AssemblyName>Nemerle.ComputationExpressions.dll</AssemblyName>
-      <HintPath>C:\Program Files (x86)\Nemerle\net-4.0\Nemerle.ComputationExpressions.dll</HintPath>
+    <Reference Include="Nemerle.ComputationExpressions">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>$(Nemerle)\Nemerle.ComputationExpressions.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core">
@@ -66,11 +66,8 @@
       <HintPath>$(Nemerle)\Nemerle.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <MacroReference Include="Nemerle.ComputationExpressions.Macros, Version=1.1.746.0, Culture=neutral, PublicKeyToken=e080a9c724e2bfcd">
-      <Name>Nemerle.ComputationExpressions.Macros</Name>
-      <AssemblyName>Nemerle.ComputationExpressions.Macros.dll</AssemblyName>
-      <HintPath>C:\Program Files (x86)\Nemerle\net-4.0\Nemerle.ComputationExpressions.Macros.dll</HintPath>
-      <Private>False</Private>
+    <MacroReference Include="Nemerle.ComputationExpressions.Macros">
+      <HintPath>$(Nemerle)\Nemerle.ComputationExpressions.Macros.dll</HintPath>
     </MacroReference>
     <MacroReference Include="Nemerle.Linq">
       <HintPath>$(Nemerle)\Nemerle.Linq.dll</HintPath>
