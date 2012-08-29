@@ -11,6 +11,8 @@ using System.Linq;
 using NThrift.Ccr;
 using NThrift.Ccr.Macros;
 
+using Microsoft.Ccr.Core;
+
 namespace NThrift.Ccr.Macros.Test
 {
     public class CcrMacrosCompilationTest
@@ -39,5 +41,25 @@ namespace NThrift.Ccr.Macros.Test
             }
         }
         
+        dispatcherQueue : DispatcherQueue = DispatcherQueue();
+        
+        public SimpleBind() : ResultFailurePort[int]
+        {          
+            ccrcomp(dispatcherQueue)
+            {
+                defcomp res = SimpleResultReturn();
+                return res;
+            }
+        }
+        
+        public TwoBinds() : ResultFailurePort[int]
+        {          
+            ccrcomp(dispatcherQueue)
+            {
+                defcomp res = SimpleResultReturn();
+                defcomp res2 = SimpleResultReturn();
+                return res + res2;
+            }
+        }        
     }
 }

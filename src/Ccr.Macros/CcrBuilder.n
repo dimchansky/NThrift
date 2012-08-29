@@ -10,52 +10,38 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
+using TExpr = Nemerle.Compiler.Typedtree.TExpr;
+
 namespace NThrift.Ccr.Macros
 {  
     [Record]
     public class CcrBuilder : ComputationBuilder
     {
         typer : Typer;
-        [RecordIgnore] resultPort : Name = Macros.NewSymbol ();
-       
+        dispatcherQueue : PExpr;
+        [RecordIgnore] resultPort : Name = Macros.NewSymbol ("resultPort");
+
         public override Return (expr : PExpr) : PExpr
         {
-            Macros.DefineCTX(typer);
-            
-            def expressionResultIsVoidType(e : PExpr)
+            match (expr)
             {
-                def typedExpr = typer.TypeExpr(e);
-                if (typedExpr.Type.TryRequire(<[ ttype: Microsoft.Ccr.Core.EmptyValue ]>))
-                {
-                    true
-                }
-                else
-                {
-                    match (e)
-                    {
-                        | <[ () ]> => true
-                        | _ => false
-                    }
-                }
-            }
-            
-            if (expressionResultIsVoidType(expr))
-            {
-                <[ $(resultPort : name).Post(Microsoft.Ccr.Core.EmptyValue.SharedInstance); ]> 
-            }
-            else
-            {
-                <[ 
-                    try
-                    {
-                        $(resultPort : name).Post($expr);
-                    }
-                    catch
-                    {
-                        ex => $(resultPort : name).Post(ex);
-                    }
-                ]>                 
-            }
+                | <[ () ]>          
+                | <[ Microsoft.Ccr.Core.EmptyValue.SharedInstance ]>         
+                                    =>  <[ $(resultPort : name).Post(Microsoft.Ccr.Core.EmptyValue.SharedInstance); ]>
+                | PExpr.Literal(_)
+                | PExpr.Member(_, _)
+                | PExpr.Ref(_)      =>  <[ $(resultPort : name).Post($expr); ]>
+                | _                 =>  <[ 
+                                            try
+                                            {
+                                                $(resultPort : name).Post($expr);
+                                            }
+                                            catch
+                                            {
+                                                ex => $(resultPort : name).Post(ex);
+                                            }
+                                        ]>                
+            }           
         }
 
         public override ReturnComp (expr : PExpr) : PExpr
@@ -81,7 +67,19 @@ namespace NThrift.Ccr.Macros
             ignore (expr);
             ignore (name);
             ignore (cont);
-            Message.FatalError (expr.Location, "The ccr comprehension doesn't support the Bind method.")
+            if (dispatcherQueue != null)
+            {
+                <[                    
+                    Microsoft.Ccr.Core.Arbiter.Activate($dispatcherQueue,
+                        Microsoft.Ccr.Core.Arbiter.Choice($expr,
+                            $name => $cont,
+                            ex => $(resultPort : name).Post(ex)));
+                ]>                
+            }
+            else
+            {
+                Message.FatalError (expr.Location, "In order to use Bind method you must specify dispatcher queue as ccr comprehension parameter.")
+            }
         }
 
         public override Delay (expr : PExpr) : PExpr

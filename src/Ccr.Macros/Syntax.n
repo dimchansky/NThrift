@@ -13,18 +13,18 @@ using System.Linq;
 
 namespace NThrift.Ccr.Macros
 {
-    macro @ccrcomp(expr : PExpr)
-    syntax ("ccrcomp", expr) 
+    macro @ccrcomp(expr : PExpr, dispatcherQueue : PExpr = null)
+    syntax ("ccrcomp", Optional("(", dispatcherQueue, ")"), expr) 
     {
-        CcrCompImpl.DoTransform(Macros.ImplicitCTX(), expr)
+        CcrCompImpl.DoTransform(Macros.ImplicitCTX(), dispatcherQueue, expr)
     }
 
     module CcrCompImpl
     {
-        public DoTransform(typer : Typer, expr : PExpr) : PExpr
+        public DoTransform(typer : Typer, dispatcherQueue : PExpr, expr : PExpr) : PExpr
         {
             Macros.DefineCTX(typer);
-            def builder = CcrBuilder(typer);
+            def builder = CcrBuilder(typer, dispatcherQueue);
             //assert2(false);
             ComputationExpander.Expand (builder, expr);
         }
