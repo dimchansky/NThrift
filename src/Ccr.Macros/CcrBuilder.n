@@ -68,8 +68,6 @@ namespace NThrift.Ccr.Macros
             ignore (cont);           
             if (dispatcherQueue != null)
             {               
-                def tExpr = typer.TypeExpr(expr);
-
                 def makeResult(tExpr : TExpr) : PExpr
                 {
                     def bindPortSet = Macros.NewSymbol ("bindPortSet");
@@ -87,7 +85,8 @@ namespace NThrift.Ccr.Macros
                             mutable $(resultValue : name) : $(resultType : typed);
                             if ($(bindPortSet : name).P0.Test(out $(resultValue : name)))
                             {
-                                ($name => $cont)($(resultValue : name));
+                                def ($name) = $(resultValue : name);
+                                $cont;
                             }
                             else
                             {
@@ -109,10 +108,10 @@ namespace NThrift.Ccr.Macros
                     else
                     {
                         Message.FatalError(expr.Location, "'$expr' must be of type Microsoft.Ccr.Core.PortSet[_,System.Exception]");
-                    }
-                    
+                    }                    
                 }
 
+                def tExpr = typer.TypeExpr(expr);                                
                 match(tExpr.Type.Hint)
                 {
                     | Some(_) => makeResult(tExpr)
