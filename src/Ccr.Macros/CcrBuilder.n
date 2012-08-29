@@ -61,19 +61,19 @@ namespace NThrift.Ccr.Macros
         public override ReturnComp (expr : PExpr) : PExpr
         {
             ignore (expr);
-            <[ () ]>
+            Message.FatalError (expr.Location, "The ccr comprehension doesn't support the ReturnComp method.")
         }
 
         public override Yield (expr : PExpr) : PExpr
         {
             ignore (expr);
-            <[ () ]>
+            Message.FatalError (expr.Location, "The ccr comprehension doesn't support the Yield method.")
         }
 
         public override YieldComp (expr : PExpr) : PExpr
         {
             ignore (expr);
-            <[ () ]>
+            Message.FatalError (expr.Location, "The ccr comprehension doesn't support the YieldComp method.")
         }
 
         public override Bind (expr : PExpr, name : PExpr, cont : PExpr) : PExpr
@@ -81,20 +81,20 @@ namespace NThrift.Ccr.Macros
             ignore (expr);
             ignore (name);
             ignore (cont);
-            <[ () ]>
+            Message.FatalError (expr.Location, "The ccr comprehension doesn't support the Bind method.")
         }
 
         public override Delay (expr : PExpr) : PExpr
         {
             ignore (expr);
-            <[ () ]>
+            Message.FatalError (expr.Location, "The ccr comprehension doesn't support the Delay method.")
         }
 
         public override Combine (expr1 : PExpr, expr2 : PExpr) : PExpr 
         {
             ignore (expr1);
             ignore (expr2);
-            <[ () ]>
+            Message.FatalError (expr1.Location, "The ccr comprehension doesn't support the Combine method.")
         }
 
         public override Run (expr : PExpr) : PExpr
@@ -110,14 +110,14 @@ namespace NThrift.Ccr.Macros
 
         public override Zero () : PExpr
         {
-            <[ () ]>
+            <[()]>
         }
 
         public override While (pred : PExpr, body : PExpr) : PExpr
         {
             ignore (pred);
             ignore (body);
-            <[ () ]>
+            Message.FatalError (pred.Location, "The ccr comprehension doesn't support the While method.")
         }
 
         public override ForEach (name : PExpr, coll : PExpr, body : PExpr) : PExpr
@@ -125,14 +125,14 @@ namespace NThrift.Ccr.Macros
             ignore (name);
             ignore (coll);
             ignore (body);
-            <[ () ]>
+            Message.FatalError (name.Location, "The ccr comprehension doesn't support the ForEach method.")
         }
 
         protected override ForEach (coll : PExpr, cont : PExpr) : PExpr
         {
             ignore (coll);
             ignore (cont);
-            <[ () ]>
+            Message.FatalError (coll.Location, "The ccr comprehension doesn't support the ForEach method.")
         }
 
         public override For (init : PExpr, cond : PExpr, change : PExpr, body : PExpr) : PExpr
@@ -141,35 +141,35 @@ namespace NThrift.Ccr.Macros
             ignore (cond);
             ignore (change);
             ignore (body);
-            <[ () ]>
+            Message.FatalError (init.Location, "The ccr comprehension doesn't support the For method.")
         }
 
         public override DoWhile (pred : PExpr, body : PExpr) : PExpr
         {
             ignore (pred);
             ignore (body);
-            <[ () ]>
+            Message.FatalError (pred.Location, "The ccr comprehension doesn't support the DoWhile method.")
         }
 
         public override TryFinally (body : PExpr, handler : PExpr) : PExpr
         {
             ignore (body);
             ignore (handler);            
-            <[ () ]>
+            Message.FatalError (body.Location, "The ccr comprehension doesn't support the TryFinally method.")
         }
 
         public override TryCatch (body : PExpr, cases : list [TryCase]) : PExpr
         {
             ignore (body);
             ignore (cases);                        
-            <[ () ]>
+            Message.FatalError (body.Location, "The ccr comprehension doesn't support the TryCatch method.")
         }
 
         protected override TryCatch (body : PExpr, cont : PExpr) : PExpr
         {
             ignore (body);
             ignore (cont);
-            <[ () ]>        
+            Message.FatalError (body.Location, "The ccr comprehension doesn't support the TryCatch method.")
         }
 
         public override Using (expr : PExpr, name : PExpr, body : PExpr) : PExpr
@@ -177,7 +177,7 @@ namespace NThrift.Ccr.Macros
             ignore (expr);
             ignore (name);
             ignore (body);
-            <[ () ]>
+            Message.FatalError (expr.Location, "The ccr comprehension doesn't support the Using method.")
         }        
     }    
 }
