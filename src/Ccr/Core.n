@@ -19,17 +19,37 @@ namespace NThrift.Ccr
     [Record]
     public struct CAsync
     {
-        [Accessor] type : CAsyncType;
-        [Accessor] exception : System.Exception;
-        [Accessor] resultPort : VoidFailurePort;
+        [Accessor(flags=Internal)] type : CAsyncType;
+        [Accessor(flags=Internal)] exception : System.Exception;
+        [Accessor(flags=Internal)] resultPort : VoidFailurePort;
+        
+        public static CreateResult(): CAsync
+        {
+            CAsync(CAsyncType.CompletedResult, null, null)
+        }
+        
+        public static CreateException(ex : System.Exception) : CAsync
+        {
+            CAsync(CAsyncType.CompletedException, ex, null)
+        }
     }    
     
     [Record]
     public struct CAsync[TResult]
     {
-        [Accessor] type : CAsyncType;
-        [Accessor] result : TResult;
-        [Accessor] exception : System.Exception;
-        [Accessor] resultPort : ResultFailurePort[TResult];
+        [Accessor(flags=Internal)] type : CAsyncType;
+        [Accessor(flags=Internal)] result : TResult;
+        [Accessor(flags=Internal)] exception : System.Exception;
+        [Accessor(flags=Internal)] resultPort : ResultFailurePort[TResult];
+        
+        public static CreateResult(result : TResult): CAsync[TResult]
+        {
+            CAsync(CAsyncType.CompletedResult, result, null, null)
+        }
+        
+        public static CreateException(ex : System.Exception) : CAsync[TResult]
+        {
+            CAsync(CAsyncType.CompletedException, default(TResult), ex, null)
+        }
     }   
 }

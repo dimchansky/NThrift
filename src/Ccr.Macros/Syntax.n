@@ -24,7 +24,7 @@ namespace NThrift.Ccr.Macros
         public DoTransform(typer : Typer, dispatcherQueue : PExpr, expr : PExpr) : PExpr
         {
             Macros.DefineCTX(typer);
-            def builder = CcrBuilder(dispatcherQueue);
+            def builder = CcrBuilder(typer, dispatcherQueue);
             //assert2(false);
             ComputationExpander.Expand (builder, expr);
         }

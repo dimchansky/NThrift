@@ -17,49 +17,25 @@ namespace NThrift.Ccr.Macros.Test
 {
     public class CcrMacrosCompilationTest
     {
-        //public SimpleResultReturn() : ResultFailurePort[int]
-        //{
-        //    ccrcomp
-        //    {
-        //        return 1;
-        //    }
-        //}
-      
-        //public ImplicitVoidResultReturn() : VoidFailurePort
-        //{
-        //    ccrcomp
-        //    {
-        //        return (); // return Microsoft.Ccr.Core.EmptyValue.SharedInstance;
-        //    }
-        //}
-
-        //public ExplicitVoidResultReturn() : VoidFailurePort
-        //{
-        //    ccrcomp
-        //    {
-        //        return Microsoft.Ccr.Core.EmptyValue.SharedInstance;
-        //    }
-        //}
+        public SyncValueReturn() : CAsync[int]
+        {
+            ccrcomp
+            {
+                def a = 1;
+                def b = 2;
+                return a + b;
+            };
+        }
         
-        //dispatcherQueue : DispatcherQueue = DispatcherQueue();
-        
-        //public SimpleBind() : ResultFailurePort[int]
-        //{          
-        //    ccrcomp(dispatcherQueue)
-        //    {
-        //        defcomp res = SimpleResultReturn();
-        //        return res;
-        //    }
-        //}
-        
-        //public TwoBinds() : ResultFailurePort[int]
-        //{          
-        //    ccrcomp(dispatcherQueue)
-        //    {
-        //        defcomp res = SimpleResultReturn();
-        //        defcomp res2 = SimpleResultReturn();
-        //        return res + res2;
-        //    }
-        //}        
+        public SyncVoidReturn() : CAsync
+        {
+            ccrcomp
+            {
+                def a = 1;
+                def b = 2;
+                _ = a + b;
+                return ();
+            }
+        }              
     }
 }

@@ -17,12 +17,16 @@ namespace NThrift.Ccr.Macros
     [Record]
     public class CcrBuilder : ComputationBuilder
     {
+        typer : Typer;
         dispatcherQueue : PExpr;
 
         public override Return (expr : PExpr) : PExpr
         {
-            ignore (expr);
-            Message.FatalError (expr.Location, "The ccr comprehension doesn't support the Return method.")
+            match (expr)
+            {
+                | <[()]> => <[ CcrBuilder.Return() ]>
+                | _      => <[ CcrBuilder.Return($expr) ]>
+            }            
         }
 
         public override ReturnComp (expr : PExpr) : PExpr
@@ -66,8 +70,53 @@ namespace NThrift.Ccr.Macros
 
         public override Run (expr : PExpr) : PExpr
         {
-            ignore (expr);
-            Message.FatalError (expr.Location, "The ccr comprehension doesn't support the Run method.")
+            Macros.DefineCTX(typer);
+            
+            def makeResult(tExpr : TExpr) : PExpr
+            {                
+                def tAsyncValueExpr = <[ ttype: NThrift.Ccr.CAsync[_] ]>;
+                
+                if (tAsyncValueExpr.TryUnify(tExpr.Type))
+                {
+                    <[
+                        try
+                        {
+                            $(tExpr : typed)
+                        }
+                        catch
+                        {
+                            ex => CcrBuilder.Fail(ex);
+                        }
+                    ]>                    
+                }
+                else
+                {
+                    <[
+                        try
+                        {
+                            $(tExpr : typed)
+                        }
+                        catch
+                        {
+                            ex => CcrBuilder.FailVoid(ex);
+                        }
+                    ]>                     
+                }
+            }  
+            
+            def tExpr = typer.TypeExpr(expr);                                
+            match(tExpr.Type.Hint)
+            {
+                | Some(_) => makeResult(tExpr)
+                | _       => typer.DelayMacro(lastTry =>
+                                match(tExpr.Type.Hint)
+                                {
+                                    | Some(_) => Some(makeResult(tExpr))
+                                    | _       => when (lastTry) Message.Error(expr.Location, $"Can't determine type of '$expr'");
+                                                    None()
+                                }
+                                );
+            }            
         }
 
         public override Zero () : PExpr
