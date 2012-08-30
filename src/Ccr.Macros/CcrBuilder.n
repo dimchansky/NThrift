@@ -17,28 +17,12 @@ namespace NThrift.Ccr.Macros
     [Record]
     public class CcrBuilder : ComputationBuilder
     {
-        typer : Typer;
         dispatcherQueue : PExpr;
-        [RecordIgnore] resultPort : Name = Macros.NewSymbol ("resultPort");
 
         public override Return (expr : PExpr) : PExpr
         {
-            match (expr)
-            {
-                | <[ () ]>          =>  <[ $(resultPort : name).Post(Microsoft.Ccr.Core.EmptyValue.SharedInstance); ]>
-                | PExpr.Literal(_)
-                | PExpr.Ref(_)      =>  <[ $(resultPort : name).Post($expr); ]>
-                | _                 =>  <[ 
-                                            try
-                                            {
-                                                $(resultPort : name).Post($expr);
-                                            }
-                                            catch
-                                            {
-                                                ex => $(resultPort : name).Post(ex);
-                                            }
-                                        ]>                
-            }           
+            ignore (expr);
+            Message.FatalError (expr.Location, "The ccr comprehension doesn't support the Return method.")
         }
 
         public override ReturnComp (expr : PExpr) : PExpr
@@ -61,74 +45,10 @@ namespace NThrift.Ccr.Macros
 
         public override Bind (expr : PExpr, name : PExpr, cont : PExpr) : PExpr
         {
-            Macros.DefineCTX(typer);
-
             ignore (expr);
             ignore (name);
-            ignore (cont);           
-            if (dispatcherQueue != null)
-            {               
-                def makeResult(tExpr : TExpr) : PExpr
-                {
-                    def bindPortSet = Macros.NewSymbol ("bindPortSet");
-                    def resultValue = Macros.NewSymbol ("resultValue");
-                    def resultException = Macros.NewSymbol ("resultException");
-                    def tBindExpr = <[ ttype: Microsoft.Ccr.Core.PortSet[_, System.Exception] ]> ;
-                    
-                    if (tBindExpr.TryUnify(tExpr.Type))
-                    {
-                        tBindExpr.ForceUnify(tExpr.Type);
-                        def resultType = tBindExpr.args.Head;
-                        <[
-                            def $(bindPortSet : name) = $(tExpr : typed);
-
-                            mutable $(resultValue : name) : $(resultType : typed);
-                            if ($(bindPortSet : name).P0.Test(out $(resultValue : name)))
-                            {
-                                def ($name) = $(resultValue : name);
-                                $cont;
-                            }
-                            else
-                            {
-                                mutable $(resultException : name) : System.Exception;
-                                if($(bindPortSet : name).P1.Test(out $(resultException : name)))
-                                {
-                                    $(resultPort : name).Post($(resultException : name));
-                                }
-                                else
-                                {
-                                    Microsoft.Ccr.Core.Arbiter.Activate($dispatcherQueue,
-                                        Microsoft.Ccr.Core.Arbiter.Choice($(bindPortSet : name),
-                                            $name => $cont,
-                                            ex => $(resultPort : name).Post(ex)));
-                                }
-                            }
-                        ]>
-                    }
-                    else
-                    {
-                        Message.FatalError(expr.Location, "'$expr' must be of type Microsoft.Ccr.Core.PortSet[_,System.Exception]");
-                    }                    
-                }
-
-                def tExpr = typer.TypeExpr(expr);                                
-                match(tExpr.Type.Hint)
-                {
-                    | Some(_) => makeResult(tExpr)
-                    | _       => typer.DelayMacro(lastTry =>
-                                    match(tExpr.Type.Hint)
-                                    {
-                                        | Some(_) => Some(makeResult(tExpr))
-                                        | _       => when (lastTry) Message.Error(expr.Location, $"Cannot infer type of '$expr'");
-                                                     None()
-                                    }
-                                 );
-                }
-            }
-            else
-            {
-                Message.FatalError (expr.Location, "In order to use Bind method you must specify dispatcher queue as ccr comprehension parameter.")
-            }
+            ignore (cont);
+            Message.FatalError (expr.Location, "The ccr comprehension doesn't support the Bind method.")
         }
 
         public override Delay (expr : PExpr) : PExpr
@@ -146,18 +66,13 @@ namespace NThrift.Ccr.Macros
 
         public override Run (expr : PExpr) : PExpr
         {
-            <[
-                {
-                    def $(resultPort : name) = NThrift.Ccr.ResultFailurePort();
-                    $expr;
-                    $(resultPort : name);
-                }
-            ]>
+            ignore (expr);
+            Message.FatalError (expr.Location, "The ccr comprehension doesn't support the Run method.")
         }
 
         public override Zero () : PExpr
         {
-            <[()]>
+            Message.FatalError ("The ccr comprehension doesn't support the Zero method.")
         }
 
         public override While (pred : PExpr, body : PExpr) : PExpr

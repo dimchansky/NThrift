@@ -24,50 +24,9 @@ namespace NThrift.Ccr.Macros
         public DoTransform(typer : Typer, dispatcherQueue : PExpr, expr : PExpr) : PExpr
         {
             Macros.DefineCTX(typer);
-            def builder = CcrBuilder(typer, dispatcherQueue);
+            def builder = CcrBuilder(dispatcherQueue);
             //assert2(false);
             ComputationExpander.Expand (builder, expr);
         }
-    }    
-
-/*    
-  [Nemerle.MacroUsage(Nemerle.MacroPhase.BeforeTypedMembers,
-    Nemerle.MacroTargets.Method,
-    Inherited = true,
-    AllowMultiple = false)]
-  public macro CcrMethod(typeBuilder : TypeBuilder, method : ClassMember.Function)
-  syntax("ccr")
-  {
-      CcrMethodImpl.DoTransform(Macros.ImplicitCTX(), typeBuilder, method)
-  }
-
-  module CcrMethodImpl
-  {
-    public DoTransform(typer : Typer, typeBuilder : TypeBuilder, method : ClassMember.Function) : void
-    {
-        //assert2(false);
-        Macros.DefineCTX(typer);
-
-        _ = typeBuilder; 
-        _ = method;
-
-        def prs = method.header.Parameters;             
-
-        match (prs)
-        {
-            | []    => Message.Error(method.header.Location, "Last parameter must be of type PortSet<TResult,Exception>")
-            | ps    => def lastParam = ps.Last;
-                       def lastParamType = typer.BindFixedType(lastParam.Type);
-                       Message.Hint(lastParam.Location, $"$(lastParam.Name) : $lastParamType"); 
-                       def portSetType = <[ ttype: Microsoft.Ccr.Core.PortSet[_,_] ]>;
-
-                       when (portSetType.TryUnify(lastParamType))
-                       {
-                           portSetType.ForceUnify(lastParamType);
-                           Message.Hint(lastParam.Location, $"Try unify = $portSetType");
-                       }                       
-        }
-    }      
-  }
-*/  
+    } 
 }
