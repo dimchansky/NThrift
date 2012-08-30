@@ -23,14 +23,44 @@ namespace NThrift.Ccr
         [Accessor(flags=Internal)] exception : System.Exception;
         [Accessor(flags=Internal)] resultPort : VoidFailurePort;
         
-        public static CreateResult(): CAsync
+        internal static CreateResult(): CAsync
         {
             CAsync(CAsyncType.CompletedResult, null, null)
         }
         
-        public static CreateException(ex : System.Exception) : CAsync
+        internal static CreateException(ex : System.Exception) : CAsync
         {
             CAsync(CAsyncType.CompletedException, ex, null)
+        }
+        
+        internal static CreateAsync(resultPort : VoidFailurePort) : CAsync
+        {
+            CAsync(CAsyncType.Async, null, resultPort);
+        }
+        
+        public static FromBeginEnd(begin : AsyncCallback -> IAsyncResult, end : IAsyncResult -> void) : CAsync
+        {
+            def resultPort = VoidFailurePort();
+            
+            try
+            {
+                _ = begin(ar =>
+                            try
+                            {
+                                end(ar);
+                                resultPort.Post(EmptyValue.SharedInstance);
+                            }
+                            catch
+                            {
+                                ex => resultPort.Post(ex);
+                            });
+                            
+                CAsync.CreateAsync(resultPort);
+            }
+            catch
+            {
+                ex => CAsync.CreateException(ex);
+            }                       
         }
     }    
     
@@ -42,14 +72,44 @@ namespace NThrift.Ccr
         [Accessor(flags=Internal)] exception : System.Exception;
         [Accessor(flags=Internal)] resultPort : ResultFailurePort[TResult];
         
-        public static CreateResult(result : TResult): CAsync[TResult]
+        internal static CreateResult(result : TResult): CAsync[TResult]
         {
             CAsync(CAsyncType.CompletedResult, result, null, null)
         }
         
-        public static CreateException(ex : System.Exception) : CAsync[TResult]
+        internal static CreateException(ex : System.Exception) : CAsync[TResult]
         {
             CAsync(CAsyncType.CompletedException, default(TResult), ex, null)
         }
+        
+        internal static CreateAsync(resultPort : ResultFailurePort[TResult]) : CAsync[TResult]
+        {
+            CAsync(CAsyncType.Async, default(TResult), null, resultPort);
+        }
+        
+        public static FromBeginEnd(begin : AsyncCallback -> IAsyncResult, end : IAsyncResult -> TResult) : CAsync[TResult]
+        {
+            def resultPort = ResultFailurePort();
+            
+            try
+            {
+                _ = begin(ar =>
+                            try
+                            {
+                                def result = end(ar);
+                                resultPort.Post(result);
+                            }
+                            catch
+                            {
+                                ex => resultPort.Post(ex);
+                            });
+                            
+                CAsync.CreateAsync(resultPort);
+            }
+            catch
+            {
+                ex => CAsync.[TResult].CreateException(ex);
+            }                       
+        }        
     }   
 }
