@@ -48,10 +48,14 @@ namespace NThrift.Ccr.Macros
 
         public override Bind (expr : PExpr, name : PExpr, cont : PExpr) : PExpr
         {
-            ignore (expr);
-            ignore (name);
-            ignore (cont);
-            Message.FatalError (expr.Location, "The ccr comprehension doesn't support the Bind method.")
+            if (dispatcherQueue != null)
+            {
+                <[ CcrBuilder.Bind($dispatcherQueue, $expr, $name => $cont) ]>;
+            }
+            else
+            {
+                Message.FatalError (expr.Location, "In order to use Bind method you must specify dispatcher queue as ccr comprehension parameter.")
+            }
         }
 
         public override Delay (expr : PExpr) : PExpr

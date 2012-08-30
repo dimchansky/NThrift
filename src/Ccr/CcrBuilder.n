@@ -7,8 +7,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
+using Microsoft.Ccr.Core;
+
 namespace NThrift.Ccr
-{
+{   
     public module CcrBuilder
     {
         public Return[A](value : A) : CAsync[A]
@@ -29,6 +31,66 @@ namespace NThrift.Ccr
         public FailVoid(ex : System.Exception) : CAsync
         {
             CAsync.CreateException(ex);
-        }        
+        }
+        
+        public Bind[A, B](dq : DispatcherQueue, 
+                          async : CAsync[A], 
+                          f : A -> CAsync[B]) : CAsync[B]
+        {
+            match (async.Type)
+            {
+                | CAsyncType.CompletedResult    =>  
+                        try
+                        {
+                            f(async.Result)
+                        }
+                        catch
+                        {
+                            ex => CAsync.[B].CreateException(ex)
+                        }
+                                                    
+                | CAsyncType.CompletedException =>  
+                        assert2(async.Exception != null);
+                        CAsync.[B].CreateException(async.Exception)
+                                                    
+                | CAsyncType.Async              =>  
+                        assert2(async.ResultPort != null);
+                        def contResultPort = ResultFailurePort();
+                        Arbiter.Activate(dq,
+                            Arbiter.Choice(async.ResultPort,
+                                r  => try
+                                      {
+                                          def contAsync = f(r);
+                                          PostAsyncToResultPort(dq, contAsync, contResultPort)
+                                      }
+                                      catch
+                                      {
+                                          ex => contResultPort.Post(ex)
+                                      },
+                                ex => contResultPort.Post(ex)));
+                        CAsync.[B].CreateAsync(contResultPort);
+                                                    
+            }
+        }
+        
+        private static PostAsyncToResultPort[A](dq : DispatcherQueue, async : CAsync[A], resultPort : ResultFailurePort[A]) : void
+        {
+            match (async.Type)
+            {
+                | CAsyncType.CompletedResult      => 
+                    resultPort.Post(async.Result)
+                                                                                
+                | CAsyncType.CompletedException   => 
+                    assert2(async.Exception != null);
+                    resultPort.Post(async.Exception)
+
+                | CAsyncType.Async                =>
+                    assert2(async.ResultPort != null);
+                    Arbiter.Activate(dq,
+                        Arbiter.Choice(async.ResultPort,
+                            resultPort.Post(_),
+                            resultPort.Post(_)))
+            }            
+        }
     }
 }

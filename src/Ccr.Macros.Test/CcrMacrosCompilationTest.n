@@ -45,5 +45,18 @@ namespace NThrift.Ccr.Macros.Test
                 returncomp SyncVoidReturn();
             }
         }
+        
+        dq : DispatcherQueue = DispatcherQueue();
+        
+        public DoAsyncRead(stream : System.IO.Stream) : CAsync[string]
+        {
+            ccrcomp(dq)
+            {
+                mutable buffer = array(42);
+                defcomp readed = CAsync.FromBeginEnd(stream.BeginRead(buffer, 0, buffer.Length, _, null),
+                                                     stream.EndRead(_));
+                return System.Text.Encoding.ASCII.GetString(buffer, 0, readed);
+            }
+        }
     }
 }
