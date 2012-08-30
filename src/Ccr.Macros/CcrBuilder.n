@@ -31,8 +31,7 @@ namespace NThrift.Ccr.Macros
 
         public override ReturnComp (expr : PExpr) : PExpr
         {
-            ignore (expr);
-            Message.FatalError (expr.Location, "The ccr comprehension doesn't support the ReturnComp method.")
+            <[ $expr ]>
         }
 
         public override Yield (expr : PExpr) : PExpr

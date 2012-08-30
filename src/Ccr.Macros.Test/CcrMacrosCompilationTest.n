@@ -36,6 +36,14 @@ namespace NThrift.Ccr.Macros.Test
                 _ = a + b;
                 return ();
             }
-        }              
+        }
+        
+        public SyncReturnComp() : CAsync
+        {
+            ccrcomp
+            {
+                returncomp SyncVoidReturn();
+            }
+        }
     }
 }
