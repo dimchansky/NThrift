@@ -1,9 +1,35 @@
 ﻿using System;
 
+using Nemerle.Utility;
+
 using Microsoft.Ccr.Core;    
 
 namespace NThrift.Ccr
 {
     public type ResultFailurePort[TResult] = PortSet[TResult, Exception];
     public type VoidFailurePort = ResultFailurePort[EmptyValue];
+    
+    public enum CAsyncType : byte
+    {
+        | CompletedResult    = 0
+        | CompletedException = 1
+        | Async              = 2
+    }
+
+    [Record]
+    public struct CAsync
+    {
+        [Accessor] type : CAsyncType;
+        [Accessor] exception : System.Exception;
+        [Accessor] resultPort : VoidFailurePort;
+    }    
+    
+    [Record]
+    public struct CAsync[TResult]
+    {
+        [Accessor] type : CAsyncType;
+        [Accessor] result : TResult;
+        [Accessor] exception : System.Exception;
+        [Accessor] resultPort : ResultFailurePort[TResult];
+    }   
 }
