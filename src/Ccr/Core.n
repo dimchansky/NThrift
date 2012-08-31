@@ -41,8 +41,8 @@ namespace NThrift.Ccr
             CAsync(CAsyncType.Async, null, resultPort);
         }
 
-        /// CAsync can be bind only to one result port
-        public BindToPort([NotNull]dq : DispatcherQueue, [NotNull]port : VoidFailurePort) : void
+        /// PostToPort can be used multiple times on multiple ports
+        public PostToPort([NotNull]dq : DispatcherQueue, [NotNull]port : VoidFailurePort) : void
         {
             match (type)
             {
@@ -57,15 +57,7 @@ namespace NThrift.Ccr
                     assert2(resultPort != null);                    
                     resultPort.RepostToPort(dq, port);
             }                        
-        }
-        
-        // CAsync can be transformed to port only once
-        public ToPort([NotNull]dq : DispatcherQueue) : VoidFailurePort
-        {
-            def port = VoidFailurePort();
-            this.BindToPort(dq, port);
-            port;
-        }        
+        }           
         
         public static FromBeginEnd(begin : AsyncCallback -> IAsyncResult, end : IAsyncResult -> void) : CAsync
         {
@@ -116,8 +108,8 @@ namespace NThrift.Ccr
             CAsync(CAsyncType.Async, default(TResult), null, resultPort);
         }
         
-        /// CAsync can be bind only to one result port
-        public BindToPort([NotNull]dq : DispatcherQueue, [NotNull]port : ResultFailurePort[TResult]) : void
+        /// PostToPort can be used multiple times on multiple ports
+        public PostToPort([NotNull]dq : DispatcherQueue, [NotNull]port : ResultFailurePort[TResult]) : void
         {
             match (type)
             {
@@ -132,15 +124,7 @@ namespace NThrift.Ccr
                     assert2(resultPort != null);
                     resultPort.RepostToPort(dq, port);
             }                        
-        }
-        
-        // CAsync can be transformed to port only once
-        public ToPort([NotNull]dq : DispatcherQueue) : ResultFailurePort[TResult]
-        {
-            def port = ResultFailurePort();
-            this.BindToPort(dq, port);
-            port;
-        }        
+        }             
         
         public static FromBeginEnd(begin : AsyncCallback -> IAsyncResult, end : IAsyncResult -> TResult) : CAsync[TResult]
         {

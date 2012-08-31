@@ -14,6 +14,7 @@ namespace NThrift.Ccr.Extensions
 {
     public module PortSetExt
     {
+        /// RepostToPort can be used multiple times
         public static RepostToPort[T0, T1]([NotNull]this fromPort : PortSet[T0, T1], [NotNull]dq : DispatcherQueue, [NotNull]toPort : PortSet[T0, T1]) : void
         {
             // check if result port already has result
@@ -21,6 +22,7 @@ namespace NThrift.Ccr.Extensions
             if (fromPort.P0.Test(out result1)) // test for first result
             {
                 toPort.Post(result1);
+                fromPort.Post(result1);
             }
             else
             {
@@ -28,14 +30,22 @@ namespace NThrift.Ccr.Extensions
                 if (fromPort.P1.Test(out result2)) // test for second result
                 {
                     toPort.Post(result2);
+                    fromPort.Post(result2);
                 }
                 else
                 {
                     // port has no results, activating continuation
                     Arbiter.Activate(dq,
                         Arbiter.Choice(fromPort,
-                            toPort.Post(_),
-                            toPort.Post(_)))
+                            r1 => {
+                                    toPort.Post(r1);
+                                    fromPort.Post(r1);
+                                  },
+                            r2 => {
+                                    toPort.Post(r2);
+                                    fromPort.Post(r2);
+                                  },
+                            ))
                 }
             }             
         }

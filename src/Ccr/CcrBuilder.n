@@ -62,7 +62,7 @@ namespace NThrift.Ccr
                                 r  => try
                                       {
                                           def contAsync = f(r);
-                                          contAsync.BindToPort(dq, contResultPort);
+                                          contAsync.PostToPort(dq, contResultPort);
                                       }
                                       catch
                                       {
