@@ -1,0 +1,43 @@
+﻿using Nemerle;
+using Nemerle.Assertions;
+using Nemerle.Collections;
+using Nemerle.Text;
+using Nemerle.Utility;
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+using Microsoft.Ccr.Core;
+
+namespace NThrift.Ccr.Extensions
+{
+    public module PortSetExt
+    {
+        public static RepostToPort[T0, T1]([NotNull]this fromPort : PortSet[T0, T1], [NotNull]dq : DispatcherQueue, [NotNull]toPort : PortSet[T0, T1]) : void
+        {
+            // check if result port already has result
+            mutable result1;                    
+            if (fromPort.P0.Test(out result1)) // test for first result
+            {
+                toPort.Post(result1);
+            }
+            else
+            {
+                mutable result2;
+                if (fromPort.P1.Test(out result2)) // test for second result
+                {
+                    toPort.Post(result2);
+                }
+                else
+                {
+                    // port has no results, activating continuation
+                    Arbiter.Activate(dq,
+                        Arbiter.Choice(fromPort,
+                            toPort.Post(_),
+                            toPort.Post(_)))
+                }
+            }             
+        }
+    }
+}

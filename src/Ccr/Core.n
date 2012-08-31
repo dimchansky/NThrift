@@ -3,7 +3,9 @@
 using Nemerle.Assertions;
 using Nemerle.Utility;
 
-using Microsoft.Ccr.Core;    
+using Microsoft.Ccr.Core;   
+
+using NThrift.Ccr.Extensions;
 
 namespace NThrift.Ccr
 {
@@ -52,33 +54,8 @@ namespace NThrift.Ccr
                     port.Post(exception)
 
                 | CAsyncType.Async                =>
-                    assert2(resultPort != null);
-                    
-                    // check if result port already has result or exception
-                    mutable result;                    
-                    if (resultPort.P0.Test(out result)) // test for result
-                    {
-                        port.Post(result);
-                    }
-                    else
-                    {
-                        mutable ex;
-                        if (resultPort.P1.Test(out ex)) // test for exception
-                        {
-                            port.Post(ex);
-                        }
-                        else
-                        {
-                            // port has no result or exception, activating continuation
-                            Arbiter.Activate(dq,
-                                Arbiter.Choice(resultPort,
-                                    port.Post(_),
-                                    ex => {
-                                            assert2(ex != null);
-                                            port.Post(ex)
-                                          }))                            
-                        }
-                    }                    
+                    assert2(resultPort != null);                    
+                    resultPort.RepostToPort(dq, port);
             }                        
         }
         
@@ -153,32 +130,7 @@ namespace NThrift.Ccr
 
                 | CAsyncType.Async                =>
                     assert2(resultPort != null);
-                    
-                    // check if result port already has result or exception
-                    mutable result;                    
-                    if (resultPort.P0.Test(out result)) // test for result
-                    {
-                        port.Post(result);
-                    }
-                    else
-                    {
-                        mutable ex;
-                        if (resultPort.P1.Test(out ex)) // test for exception
-                        {
-                            port.Post(ex);
-                        }
-                        else
-                        {
-                            // port has no result or exception, activating continuation
-                            Arbiter.Activate(dq,
-                                Arbiter.Choice(resultPort,
-                                    port.Post(_),
-                                    ex => {
-                                            assert2(ex != null);
-                                            port.Post(ex)
-                                          }))                            
-                        }
-                    }                    
+                    resultPort.RepostToPort(dq, port);
             }                        
         }
         
