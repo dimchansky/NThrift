@@ -10,6 +10,8 @@ using System.Linq;
 
 using Microsoft.Ccr.Core;
 
+using NThrift.Ccr.Extensions;
+
 namespace NThrift.Ccr
 {   
     public module CcrBuilder
@@ -54,23 +56,59 @@ namespace NThrift.Ccr
                         assert2(async.Exception != null);
                         CAsync.[B].CreateException(async.Exception)
                                                     
-                | CAsyncType.Async              =>  
+                | CAsyncType.Async              =>                          
                         assert2(async.ResultPort != null);
-                        def contResultPort = ResultFailurePort();
-                        Arbiter.Activate(dq,
-                            Arbiter.Choice(async.ResultPort,
-                                r  => try
-                                      {
-                                          def contAsync = f(r);
-                                          contAsync.PostToPort(dq, contResultPort);
-                                      }
-                                      catch
-                                      {
-                                          ex => contResultPort.Post(ex)
-                                      },
-                                ex => contResultPort.Post(ex)));
-                        CAsync.[B].CreateAsync(contResultPort);
-                                                    
+                        
+                        // check for possible synchronous result
+                        mutable res;                        
+                        if (async.ResultPort.P0.Test(out res)) // test for result
+                        {
+                            async.ResultPort.Post(res);
+                            try
+                            {
+                                f(async.Result)
+                            }
+                            catch
+                            {
+                                ex => CAsync.[B].CreateException(ex)
+                            }
+                        }
+                        else
+                        {
+                            mutable ex;
+                            if (async.ResultPort.P1.Test(out ex)) // test for exception
+                            {
+                                async.ResultPort.Post(ex);
+                                CAsync.[B].CreateException(ex);
+                            }
+                            else
+                            {
+                                def contResultPort = ResultFailurePort();
+                                               
+                                Arbiter.Activate(dq,
+                                    Arbiter.Choice(async.ResultPort,
+                                        res  => 
+                                        {
+                                            async.ResultPort.Post(res);
+                                            try
+                                            {
+                                                def contAsync = f(res);
+                                                contAsync.PostToPort(dq, contResultPort);
+                                            }
+                                            catch
+                                            {
+                                                ex => contResultPort.Post(ex)
+                                            }
+                                        },
+                                        ex => 
+                                        {
+                                            async.ResultPort.Post(ex);
+                                            contResultPort.Post(ex)
+                                        }));
+                                
+                                CAsync.[B].CreateAsync(contResultPort);                                
+                            }
+                        }                                                        
             }
         }
     }
