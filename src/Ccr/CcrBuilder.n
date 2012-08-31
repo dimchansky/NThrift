@@ -31,7 +31,7 @@ namespace NThrift.Ccr
             CAsync.[A].CreateException(ex);
         }
         
-        public FailVoid(ex : System.Exception) : CAsync
+        public Fail(ex : System.Exception) : CAsync
         {
             CAsync.CreateException(ex);
         }

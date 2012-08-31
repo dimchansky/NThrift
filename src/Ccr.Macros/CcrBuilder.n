@@ -79,32 +79,26 @@ namespace NThrift.Ccr.Macros
             {                
                 def tAsyncValueExpr = <[ ttype: NThrift.Ccr.CAsync[_] ]>;
                 
-                if (tAsyncValueExpr.TryUnify(tExpr.Type))
-                {
-                    <[
-                        try
-                        {
-                            $(tExpr : typed)
-                        }
-                        catch
-                        {
-                            ex => CcrBuilder.Fail(ex);
-                        }
-                    ]>                    
-                }
-                else
-                {
-                    <[
-                        try
-                        {
-                            $(tExpr : typed)
-                        }
-                        catch
-                        {
-                            ex => CcrBuilder.FailVoid(ex);
-                        }
-                    ]>                     
-                }
+                def exhandler = 
+                    if (tAsyncValueExpr.TryUnify(tExpr.Type))
+                    {
+                        <[ CcrBuilder.Fail.[_](ex); ]>
+                    }
+                    else
+                    {
+                        <[ CcrBuilder.Fail(ex); ]>
+                    }
+                
+                <[
+                    try
+                    {
+                        $(tExpr : typed)
+                    }
+                    catch
+                    {
+                        ex => $exhandler;
+                    }
+                ]>                
             }  
             
             def tExpr = typer.TypeExpr(expr);                                
