@@ -111,5 +111,309 @@ namespace NThrift.Ccr
                         }                                                        
             }
         }
+
+        public Bind[A, B]([NotNull]dq : DispatcherQueue, 
+                          async : CAsync[A], 
+                          f : void -> CAsync[B]) : CAsync[B]
+        {
+            match (async.Type)
+            {
+                | CAsyncType.CompletedResult    =>  
+                        try
+                        {
+                            f()
+                        }
+                        catch
+                        {
+                            ex => CAsync.[B].CreateException(ex)
+                        }
+                                                    
+                | CAsyncType.CompletedException =>  
+                        assert2(async.Exception != null);
+                        CAsync.[B].CreateException(async.Exception)
+                                                    
+                | CAsyncType.Async              =>                          
+                        assert2(async.ResultPort != null);
+                        
+                        // check for possible synchronous result
+                        mutable res;                        
+                        if (async.ResultPort.P0.Test(out res)) // test for result
+                        {
+                            async.ResultPort.Post(res);
+                            try
+                            {
+                                f()
+                            }
+                            catch
+                            {
+                                ex => CAsync.[B].CreateException(ex)
+                            }
+                        }
+                        else
+                        {
+                            mutable ex;
+                            if (async.ResultPort.P1.Test(out ex)) // test for exception
+                            {
+                                async.ResultPort.Post(ex);
+                                CAsync.[B].CreateException(ex);
+                            }
+                            else
+                            {
+                                def contResultPort = ResultFailurePort();
+                                               
+                                Arbiter.Activate(dq,
+                                    Arbiter.Choice(async.ResultPort,
+                                        res  => 
+                                        {
+                                            async.ResultPort.Post(res);
+                                            try
+                                            {
+                                                def contAsync = f();
+                                                contAsync.PostToPort(dq, contResultPort);
+                                            }
+                                            catch
+                                            {
+                                                ex => contResultPort.Post(ex)
+                                            }
+                                        },
+                                        ex => 
+                                        {
+                                            async.ResultPort.Post(ex);
+                                            contResultPort.Post(ex)
+                                        }));
+                                
+                                CAsync.[B].CreateAsync(contResultPort);                                
+                            }
+                        }                                                        
+            }            
+        }
+        
+        public Bind[A, B]([NotNull]dq : DispatcherQueue, 
+                          async : CAsync[A], 
+                          f : void -> CAsync) : CAsync
+        {
+            match (async.Type)
+            {
+                | CAsyncType.CompletedResult    =>  
+                        try
+                        {
+                            f()
+                        }
+                        catch
+                        {
+                            ex => CAsync.CreateException(ex)
+                        }
+                                                    
+                | CAsyncType.CompletedException =>  
+                        assert2(async.Exception != null);
+                        CAsync.CreateException(async.Exception)
+                                                    
+                | CAsyncType.Async              =>                          
+                        assert2(async.ResultPort != null);
+                        
+                        // check for possible synchronous result
+                        mutable res;                        
+                        if (async.ResultPort.P0.Test(out res)) // test for result
+                        {
+                            async.ResultPort.Post(res);
+                            try
+                            {
+                                f()
+                            }
+                            catch
+                            {
+                                ex => CAsync.CreateException(ex)
+                            }
+                        }
+                        else
+                        {
+                            mutable ex;
+                            if (async.ResultPort.P1.Test(out ex)) // test for exception
+                            {
+                                async.ResultPort.Post(ex);
+                                CAsync.CreateException(ex);
+                            }
+                            else
+                            {
+                                def contResultPort = ResultFailurePort();
+                                               
+                                Arbiter.Activate(dq,
+                                    Arbiter.Choice(async.ResultPort,
+                                        res  => 
+                                        {
+                                            async.ResultPort.Post(res);
+                                            try
+                                            {
+                                                def contAsync = f();
+                                                contAsync.PostToPort(dq, contResultPort);
+                                            }
+                                            catch
+                                            {
+                                                ex => contResultPort.Post(ex)
+                                            }
+                                        },
+                                        ex => 
+                                        {
+                                            async.ResultPort.Post(ex);
+                                            contResultPort.Post(ex)
+                                        }));
+                                
+                                CAsync.CreateAsync(contResultPort);
+                            }
+                        }                                                        
+            }            
+        }        
+        
+        public Bind[A, B]([NotNull]dq : DispatcherQueue, 
+                          async : CAsync, 
+                          f : void -> CAsync[B]) : CAsync[B]
+        {
+            match (async.Type)
+            {
+                | CAsyncType.CompletedResult    =>  
+                        try
+                        {
+                            f()
+                        }
+                        catch
+                        {
+                            ex => CAsync.[B].CreateException(ex)
+                        }
+                                                    
+                | CAsyncType.CompletedException =>  
+                        assert2(async.Exception != null);
+                        CAsync.[B].CreateException(async.Exception)
+                                                    
+                | CAsyncType.Async              =>                          
+                        assert2(async.ResultPort != null);
+                        
+                        // check for possible synchronous result
+                        mutable res;                        
+                        if (async.ResultPort.P0.Test(out res)) // test for result
+                        {
+                            async.ResultPort.Post(res);
+                            try
+                            {
+                                f()
+                            }
+                            catch
+                            {
+                                ex => CAsync.[B].CreateException(ex)
+                            }
+                        }
+                        else
+                        {
+                            mutable ex;
+                            if (async.ResultPort.P1.Test(out ex)) // test for exception
+                            {
+                                async.ResultPort.Post(ex);
+                                CAsync.[B].CreateException(ex);
+                            }
+                            else
+                            {
+                                def contResultPort = ResultFailurePort();
+                                               
+                                Arbiter.Activate(dq,
+                                    Arbiter.Choice(async.ResultPort,
+                                        res  => 
+                                        {
+                                            async.ResultPort.Post(res);
+                                            try
+                                            {
+                                                def contAsync = f();
+                                                contAsync.PostToPort(dq, contResultPort);
+                                            }
+                                            catch
+                                            {
+                                                ex => contResultPort.Post(ex)
+                                            }
+                                        },
+                                        ex => 
+                                        {
+                                            async.ResultPort.Post(ex);
+                                            contResultPort.Post(ex)
+                                        }));
+                                
+                                CAsync.[B].CreateAsync(contResultPort);                                
+                            }
+                        }                                                        
+            }            
+        }
+        
+        public Bind[A, B]([NotNull]dq : DispatcherQueue, 
+                          async : CAsync, 
+                          f : void -> CAsync) : CAsync
+        {
+            match (async.Type)
+            {
+                | CAsyncType.CompletedResult    =>  
+                        try
+                        {
+                            f()
+                        }
+                        catch
+                        {
+                            ex => CAsync.CreateException(ex)
+                        }
+                                                    
+                | CAsyncType.CompletedException =>  
+                        assert2(async.Exception != null);
+                        CAsync.CreateException(async.Exception)
+                                                    
+                | CAsyncType.Async              =>                          
+                        assert2(async.ResultPort != null);
+                        
+                        // check for possible synchronous result
+                        mutable res;                        
+                        if (async.ResultPort.P0.Test(out res)) // test for result
+                        {
+                            async.ResultPort.Post(res);
+                            try
+                            {
+                                f()
+                            }
+                            catch
+                            {
+                                ex => CAsync.CreateException(ex)
+                            }
+                        }
+                        else
+                        {
+                            mutable ex;
+                            if (async.ResultPort.P1.Test(out ex)) // test for exception
+                            {
+                                async.ResultPort.Post(ex);
+                                CAsync.CreateException(ex);
+                            }
+                            else
+                            {
+                                def contResultPort = ResultFailurePort();
+                                               
+                                Arbiter.Activate(dq,
+                                    Arbiter.Choice(async.ResultPort,
+                                        res  => 
+                                        {
+                                            async.ResultPort.Post(res);
+                                            try
+                                            {
+                                                def contAsync = f();
+                                                contAsync.PostToPort(dq, contResultPort);
+                                            }
+                                            catch
+                                            {
+                                                ex => contResultPort.Post(ex)
+                                            }
+                                        },
+                                        ex => 
+                                        {
+                                            async.ResultPort.Post(ex);
+                                            contResultPort.Post(ex)
+                                        }));
+                                
+                                CAsync.CreateAsync(contResultPort);                                
+                            }
+                        }                                                        
+            }                        
+        }
     }
 }
