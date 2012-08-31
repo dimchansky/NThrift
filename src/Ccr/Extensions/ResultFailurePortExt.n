@@ -52,5 +52,61 @@ namespace NThrift.Ccr.Extensions
                 }
             }             
         }
+        
+        public static Bind[A,B]([NotNull] this fromPort : ResultFailurePort[A], 
+                                [NotNull] dq : DispatcherQueue,
+                                [NotNull] toPort : ResultFailurePort[B],
+                                bindFun : A -> B,
+                                asyncReturnFun : (B * ResultFailurePort[B]) -> void) : void
+        {
+            // check if port already has result
+            mutable res;
+            if (fromPort.P0.Test(out res)) // test for result
+            {
+                fromPort.Post(res);
+                try
+                {
+                    toPort.Post(bindFun(res));
+                }
+                catch
+                {
+                    ex => toPort.Post(ex);
+                }
+            }
+            else
+            {
+                mutable ex;
+                if (fromPort.P1.Test(out ex)) // test for exception
+                {
+                    assert2(ex != null);
+                    fromPort.Post(ex);                    
+                    toPort.Post(ex);
+                }
+                else
+                {
+                    // port has no results, activating continuation
+                    Arbiter.Activate(dq,
+                        Arbiter.Choice(fromPort,
+                            res => 
+                            {
+                                fromPort.Post(res);
+                                try
+                                {                                                                        
+                                    asyncReturnFun(bindFun(res), toPort);
+                                }
+                                catch
+                                {
+                                    ex => toPort.Post(ex);
+                                };
+                            },
+                            ex =>
+                            {
+                                assert2(ex != null);
+                                fromPort.Post(ex);                    
+                                toPort.Post(ex);
+                            }))
+                }
+            }             
+        }
     }
 }
