@@ -55,7 +55,7 @@ namespace NThrift.Ccr
 
                 | CAsyncType.Async                =>
                     assert2(resultPort != null);                    
-                    resultPort.RepostToPort(dq, port);
+                    resultPort.CopyToPort(dq, port);
             }                        
         }           
         
@@ -122,7 +122,7 @@ namespace NThrift.Ccr
 
                 | CAsyncType.Async                =>
                     assert2(resultPort != null);
-                    resultPort.RepostToPort(dq, port);
+                    resultPort.CopyToPort(dq, port);
             }                        
         }             
         

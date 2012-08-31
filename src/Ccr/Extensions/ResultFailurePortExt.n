@@ -1,0 +1,56 @@
+﻿using Nemerle;
+using Nemerle.Assertions;
+using Nemerle.Collections;
+using Nemerle.Text;
+using Nemerle.Utility;
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+using Microsoft.Ccr.Core;
+
+namespace NThrift.Ccr.Extensions
+{
+    public module ResultFailurePortExt
+    {
+        /// CopyToPort can be used multiple times
+        public static CopyToPort[T]([NotNull]this fromPort : ResultFailurePort[T], [NotNull]dq : DispatcherQueue, [NotNull]toPort : ResultFailurePort[T]) : void
+        {
+            // check if port already has result
+            mutable res;
+            if (fromPort.P0.Test(out res)) // test for result
+            {
+                fromPort.Post(res);                
+                toPort.Post(res);
+            }
+            else
+            {
+                mutable ex;
+                if (fromPort.P1.Test(out ex)) // test for exception
+                {
+                    assert2(ex != null);
+                    fromPort.Post(ex);                    
+                    toPort.Post(ex);
+                }
+                else
+                {
+                    // port has no results, activating continuation
+                    Arbiter.Activate(dq,
+                        Arbiter.Choice(fromPort,
+                            res => 
+                            {
+                                fromPort.Post(res);                
+                                toPort.Post(res);
+                            },
+                            ex =>
+                            {
+                                assert2(ex != null);
+                                fromPort.Post(ex);                    
+                                toPort.Post(ex);
+                            }))
+                }
+            }             
+        }
+    }
+}

@@ -73,7 +73,7 @@
     <Compile Include="Core.n">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Extensions\PortSetExt.n">
+    <Compile Include="Extensions\ResultFailurePortExt.n">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.n" />
