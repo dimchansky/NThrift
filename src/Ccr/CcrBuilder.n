@@ -186,9 +186,85 @@ namespace NThrift.Ccr
                             }
                         }                                                        
             }            
-        }
+        }        
         
-        public Bind[A, B]([NotNull]dq : DispatcherQueue, 
+        public Bind[A]   ([NotNull]dq : DispatcherQueue, 
+                          async : CAsync[A], 
+                          f : A -> CAsync) : CAsync
+        {
+            match (async.Type)
+            {
+                | CAsyncType.CompletedResult    =>  
+                        try
+                        {
+                            f(async.Result)
+                        }
+                        catch
+                        {
+                            ex => CAsync.CreateException(ex)
+                        }
+                                                    
+                | CAsyncType.CompletedException =>  
+                        assert2(async.Exception != null);
+                        CAsync.CreateException(async.Exception)
+                                                    
+                | CAsyncType.Async              =>                          
+                        assert2(async.ResultPort != null);
+                        
+                        // check for possible synchronous result
+                        mutable res;                        
+                        if (async.ResultPort.P0.Test(out res)) // test for result
+                        {
+                            async.ResultPort.Post(res);
+                            try
+                            {
+                                f(async.Result)
+                            }
+                            catch
+                            {
+                                ex => CAsync.CreateException(ex)
+                            }
+                        }
+                        else
+                        {
+                            mutable ex;
+                            if (async.ResultPort.P1.Test(out ex)) // test for exception
+                            {
+                                async.ResultPort.Post(ex);
+                                CAsync.CreateException(ex);
+                            }
+                            else
+                            {
+                                def contResultPort = ResultFailurePort();
+                                               
+                                Arbiter.Activate(dq,
+                                    Arbiter.Choice(async.ResultPort,
+                                        res  => 
+                                        {
+                                            async.ResultPort.Post(res);
+                                            try
+                                            {
+                                                def contAsync = f(res);
+                                                contAsync.PostToPort(dq, contResultPort);
+                                            }
+                                            catch
+                                            {
+                                                ex => contResultPort.Post(ex)
+                                            }
+                                        },
+                                        ex => 
+                                        {
+                                            async.ResultPort.Post(ex);
+                                            contResultPort.Post(ex)
+                                        }));
+                                
+                                CAsync.CreateAsync(contResultPort);                                
+                            }
+                        }                                                        
+            }
+        }        
+              
+        public Bind[A]   ([NotNull]dq : DispatcherQueue, 
                           async : CAsync[A], 
                           f : void -> CAsync) : CAsync
         {
@@ -264,7 +340,7 @@ namespace NThrift.Ccr
             }            
         }        
         
-        public Bind[A, B]([NotNull]dq : DispatcherQueue, 
+        public Bind[   B]([NotNull]dq : DispatcherQueue, 
                           async : CAsync, 
                           f : void -> CAsync[B]) : CAsync[B]
         {
@@ -340,7 +416,7 @@ namespace NThrift.Ccr
             }            
         }
         
-        public Bind[A, B]([NotNull]dq : DispatcherQueue, 
+        public Bind      ([NotNull]dq : DispatcherQueue, 
                           async : CAsync, 
                           f : void -> CAsync) : CAsync
         {
