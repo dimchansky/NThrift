@@ -1,0 +1,147 @@
+﻿using Nemerle;
+using Nemerle.Collections;
+using Nemerle.Compiler;
+using Nemerle.Compiler.Parsetree;
+using Nemerle.Compiler.Typedtree;
+using Nemerle.Text;
+using Nemerle.Utility;
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+
+namespace NThrift.Async.Macros
+{
+    macro CAsyncBind(dq : PExpr, async : PExpr, f : PExpr) 
+    syntax ("CAsyncBind", "(", dq, ";", async, ";", f, ")") 
+    {
+        CAsyncBindImpl.DoTransform(Macros.ImplicitCTX(), dq, async, f)
+    }
+
+    module CAsyncBindImpl
+    {
+        public DoTransform(typer : Typer, dq : PExpr, async : PExpr, f : PExpr) : PExpr
+        {
+            Macros.DefineCTX(typer);           
+            _ = dq; _ = async; _ = f;
+
+            def tExprAsync = typer.TypeExpr(async);
+            def tExprF = typer.TypeExpr(f);
+           
+            def makeResult(_tAsync, tF)
+            {              
+                // TODO: complete matching and review
+                def (contParamIsVoid, resultAsyncIsVoid) = match(tF)
+                {
+                    | FixedType.Fun(from, to) =>
+                        match(to)
+                        {
+                            | FixedType.Class(ti, args) when
+                                ti.FullName == "NThrift.Ccr.CAsync" =>                                
+                                    Message.Hint(f.Location, $"is void: $(from.Fix() is FixedType.Void) -> is void async: $(args.Length == 0)");
+                                    (from.Fix() is FixedType.Void, args.Length == 0)
+                        }                        
+                }                
+                
+                def catchEx = if (resultAsyncIsVoid) <[ CAsync.CreateException ]> else <[ CAsync.[_].CreateException ]>;
+                
+                def createTry(param : PExpr)
+                {
+                    def fCall = if (param != null) <[$f($param)]> else <[ $f() ]>;
+                    <[ try
+                       {
+                           $fCall;
+                       }
+                       catch
+                       {
+                           ex => $catchEx(ex)
+                       }
+                    ]>
+                }
+                              
+                def syncTry = createTry(if (contParamIsVoid) null else <[ $async.Result ]>);
+                def syncTryOnLocal = res => createTry(if (contParamIsVoid) null else <[ $(res : dyn)]>);
+                def createCAsync = if (resultAsyncIsVoid) <[CAsync.CreateAsync]> else <[CAsync.[_].CreateAsync]>;
+                def contResultPort = if (resultAsyncIsVoid) <[ NThrift.Ccr.VoidFailurePort() ]> else <[ NThrift.Ccr.ResultFailurePort() ]>;
+                
+                <[ 
+                {
+                    match ($async.Type)
+                    {
+                        | CAsyncType.CompletedResult    =>
+                                $syncTry;
+
+                        | CAsyncType.CompletedException =>
+                                assert2($async.Exception != null);
+                                $catchEx($async.Exception);
+
+                        | CAsyncType.Async              =>
+                                assert2($async.ResultPort != null);
+
+                                // check for possible synchronous result
+                                mutable res;
+                                if ($async.ResultPort.P0.Test(out res)) // test for result
+                                {
+                                    $async.ResultPort.Post(res);
+                                    $(syncTryOnLocal("res"));
+                                }
+                                else
+                                {
+                                    mutable ex;
+                                    if ($async.ResultPort.P1.Test(out ex)) // test for exception
+                                    {
+                                        $async.ResultPort.Post(ex);
+                                        $catchEx(ex);
+                                    }
+                                    else
+                                    {
+                                        def contResultPort = $contResultPort;
+                                               
+                                        Microsoft.Ccr.Core.Arbiter.Activate($dq,
+                                            Microsoft.Ccr.Core.Arbiter.Choice($async.ResultPort,
+                                                res => 
+                                                {
+                                                    $async.ResultPort.Post(res);
+                                                    def contAsync = $(syncTryOnLocal("res"));
+                                                    contAsync.PostToPort($dq, contResultPort);
+                                                },
+                                                ex => 
+                                                {
+                                                    $async.ResultPort.Post(ex);
+                                                    contResultPort.Post(ex)
+                                                }));
+
+                                        $createCAsync(contResultPort);
+                                    }
+                                }
+                    }
+                }
+                ]>               
+            }
+            
+            match (tExprAsync.Type.Hint, tExprF.Type.Hint)
+            {
+                | (Some(tAsync), Some(tF)) => makeResult(tAsync, tF)
+                | _ => 
+                    typer.DelayMacro(lastChance =>
+                    {
+                        match (tExprAsync.Type.Hint, tExprF.Type.Hint)
+                        {
+                            | (Some(tAsync), Some(tF)) => Some(makeResult(tAsync, tF))
+                            | (None, _) =>
+                              when (lastChance)
+                                Message.Error (async.Location, "Cannot infer the type of ($async).");
+                              None ()
+            
+                            | (_, None) =>
+                              when (lastChance)
+                                Message.Error (f.Location, "Cannot infer the type of ($f).");
+                              None ()
+                            
+                        }
+                    });
+            }            
+        }
+    }
+}

@@ -11,6 +11,8 @@ Project("{EDCC3B85-0BAD-11DB-BC1A-00112FDE8B61}") = "Ccr", "Ccr\Ccr.nproj", "{F9
 EndProject
 Project("{EDCC3B85-0BAD-11DB-BC1A-00112FDE8B61}") = "Ccr.Macros.Test", "Ccr.Macros.Test\Ccr.Macros.Test.nproj", "{2B066C2A-A90E-4251-A41A-F2530346CB32}"
 EndProject
+Project("{EDCC3B85-0BAD-11DB-BC1A-00112FDE8B61}") = "Async.Macros", "Async.Macros\Async.Macros.nproj", "{B23978E3-503F-4FCB-B356-B53231F3ADDB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -37,6 +39,10 @@ Global
 		{2B066C2A-A90E-4251-A41A-F2530346CB32}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2B066C2A-A90E-4251-A41A-F2530346CB32}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2B066C2A-A90E-4251-A41A-F2530346CB32}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B23978E3-503F-4FCB-B356-B53231F3ADDB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B23978E3-503F-4FCB-B356-B53231F3ADDB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B23978E3-503F-4FCB-B356-B53231F3ADDB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B23978E3-503F-4FCB-B356-B53231F3ADDB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

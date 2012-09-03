@@ -5,18 +5,18 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{f9416059-e027-4676-8728-b2938d2bd7df}</ProjectGuid>
+    <ProjectGuid>{b23978e3-503f-4fcb-b356-b53231f3addb}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>NThrift.Ccr</RootNamespace>
-    <AssemblyName>NThrift.Ccr</AssemblyName>
+    <RootNamespace>NThrift.Async.Macros</RootNamespace>
+    <AssemblyName>NThrift.Async.Macros</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <NoStdLib>true</NoStdLib>
     <NemerleVersion>Net-4.0</NemerleVersion>
     <NemerleBinPathRoot Condition=" '$(NemerleBinPathRoot)' == '' ">$(ProgramFiles)\Nemerle</NemerleBinPathRoot>
     <Nemerle Condition=" '$(Nemerle)' == '' ">$(NemerleBinPathRoot)\$(NemerleVersion)</Nemerle>
-    <Name>Ccr</Name>
+    <Name>Async.Macros</Name>
     <StartupObject />
     <ApplicationIcon />
   </PropertyGroup>
@@ -38,12 +38,6 @@
     <DocumentationFile>$(OutputPath)\$(MSBuildProjectName).xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.Ccr.Core">
-      <Name>Microsoft.Ccr.Core</Name>
-      <AssemblyName>Microsoft.Ccr.Core.dll</AssemblyName>
-      <HintPath>..\..\lib\Microsoft.Ccr.4\Microsoft.Ccr.Core.dll</HintPath>
-      <SpecificVersion>False</SpecificVersion>
-    </Reference>
     <Reference Include="mscorlib" />
     <Reference Include="System" />
     <Reference Include="System.Core">
@@ -60,34 +54,23 @@
     <Reference Include="Nemerle">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>$(Nemerle)\Nemerle.dll</HintPath>
-      <Private>True</Private>
+    </Reference>
+    <Reference Include="Nemerle.Compiler">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>$(Nemerle)\Nemerle.Compiler.dll</HintPath>
     </Reference>
     <MacroReference Include="Nemerle.Linq">
       <HintPath>$(Nemerle)\Nemerle.Linq.dll</HintPath>
     </MacroReference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CcrBuilder.n">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Core.n">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Extensions\ResultFailurePortExt.n">
+    <Compile Include="CAsyncBind.n">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.n" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Extensions" />
     <Folder Include="Properties\" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Async.Macros\Async.Macros.nproj">
-      <Name>Async.Macros</Name>
-      <Project>{b23978e3-503f-4fcb-b356-b53231f3addb}</Project>
-      <Private>True</Private>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(Nemerle)\Nemerle.MSBuild.targets" />
   <!--
