@@ -82,11 +82,11 @@ namespace NThrift.Ccr.Macros
                 def exhandler = 
                     if (tAsyncValueExpr.TryUnify(tExpr.Type))
                     {
-                        <[ CcrBuilder.Fail.[_](ex); ]>
+                        <[ CcrBuilder.Fail.[_] ]>
                     }
                     else
                     {
-                        <[ CcrBuilder.Fail(ex); ]>
+                        <[ CcrBuilder.Fail ]>
                     }
                 
                 <[
@@ -96,7 +96,7 @@ namespace NThrift.Ccr.Macros
                     }
                     catch
                     {
-                        ex => $exhandler;
+                        ex => $exhandler(ex);
                     }
                 ]>                
             }  
