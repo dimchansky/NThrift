@@ -29,7 +29,7 @@ namespace NThrift.Ccr
         
         public Fail[A](ex : System.Exception) : CAsync[A]
         {
-            CAsync.[A].CreateException(ex);
+            CAsync.[_].CreateException(ex);
         }
         
         public Fail(ex : System.Exception) : CAsync
