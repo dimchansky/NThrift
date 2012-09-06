@@ -31,7 +31,6 @@ namespace NThrift.Async.Macros
            
             def makeResult(_tAsync, tF)
             {              
-                // TODO: complete matching and review
                 def (contParamIsVoid, resultAsyncIsVoid) = match(tF)
                 {
                     | FixedType.Fun(from, to) =>
@@ -39,9 +38,10 @@ namespace NThrift.Async.Macros
                         {
                             | FixedType.Class(ti, args) when
                                 ti.FullName == "NThrift.Ccr.CAsync" =>                                
-                                    Message.Hint(f.Location, $"is void: $(from.Fix() is FixedType.Void) -> is void async: $(args.Length == 0)");
                                     (from.Fix() is FixedType.Void, args.Length == 0)
-                        }                        
+                            | _ => Message.FatalError(f.Location, "Function result must be of CAsync type.")
+                        }
+                    | _ => Message.FatalError(f.Location, "This must be function with CAsync result.")
                 }                
                 
                 def catchEx = if (resultAsyncIsVoid) <[ CAsync.CreateException ]> else <[ CAsync.[_].CreateException ]>;
