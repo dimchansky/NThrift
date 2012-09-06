@@ -19,7 +19,13 @@ namespace NThrift.Ccr.Macros
     {
         typer : Typer;
         dispatcherQueue : PExpr;
+        dispatcherQueueLocalName : Name;
 
+        public this(typer : Typer, dispatcherQueue : PExpr)
+        {
+            this(typer, dispatcherQueue, if (dispatcherQueue != null) Macros.NewSymbol("") else null)
+        }
+        
         public override Return (expr : PExpr) : PExpr
         {
             match (expr)
@@ -50,7 +56,7 @@ namespace NThrift.Ccr.Macros
         {
             if (dispatcherQueue != null)
             {
-                <[ CcrBuilder.Bind($dispatcherQueue, $expr, $name => $cont) ]>;
+                <[ CcrBuilder.Bind($(dispatcherQueueLocalName : name), $expr, $name => $cont) ]>;
             }
             else
             {
@@ -90,6 +96,7 @@ namespace NThrift.Ccr.Macros
                     }
                 
                 <[
+                {
                     try
                     {
                         $(tExpr : typed)
@@ -98,10 +105,28 @@ namespace NThrift.Ccr.Macros
                     {
                         ex => $exhandler(ex);
                     }
+                }
                 ]>                
             }  
             
-            def tExpr = typer.TypeExpr(expr);                                
+            def exprWithAssertions = 
+            if (dispatcherQueue != null)
+            {
+                def dispatcherQueueStr = $"$dispatcherQueue";
+                <[
+                {
+                    def $(dispatcherQueueLocalName : name) = $dispatcherQueue;
+                    when ($(dispatcherQueueLocalName : name) == null) throw ArgumentNullException($(dispatcherQueueStr : string), "Dispatcher queue must not be null.");
+                    $expr;
+                }
+                ]>
+            }
+            else
+            {
+                expr
+            }
+            
+            def tExpr = typer.TypeExpr(exprWithAssertions);                                
             match(tExpr.Type.Hint)
             {
                 | Some(_) => makeResult(tExpr)
