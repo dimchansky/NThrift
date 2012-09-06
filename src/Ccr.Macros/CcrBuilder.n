@@ -81,25 +81,20 @@ namespace NThrift.Ccr.Macros
         {
             Macros.DefineCTX(typer);
             
-            def makeResult(tExpr : TExpr) : PExpr
-            {                
-                def tAsyncValueExpr = <[ ttype: NThrift.Ccr.CAsync[_] ]>;
-                
+            def makeResult(tExpr) : PExpr
+            {              
                 def exhandler = 
-                    if (tAsyncValueExpr.TryUnify(tExpr.Type))
+                    match (tExpr.FixedType())
                     {
-                        <[ CcrBuilder.Fail.[_] ]>
-                    }
-                    else
-                    {
-                        <[ CcrBuilder.Fail ]>
-                    }
-                
+                        | FixedType.Class(ti, args) when ti.FullName == "NThrift.Ccr.CAsync" =>
+                            if (args.Length > 0) { <[ CcrBuilder.Fail.[_] ]> } else { <[ CcrBuilder.Fail ]> }
+                        | _ => Message.FatalError(expr.Location, "Expression must be of type CAsync.");
+                    }                                    
                 <[
                 {
                     try
                     {
-                        $(tExpr : typed)
+                        $(tExpr : typed);
                     }
                     catch
                     {
